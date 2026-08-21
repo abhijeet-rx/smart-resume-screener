@@ -1,7 +1,11 @@
 """
-LLM service — sends resume + JD to an LLM and returns structured JSON.
+LLM service — structured extraction and screening via LLM.
 
-Also provides standalone resume extraction (Task 2) via extract_resume_profile().
+Provides:
+  - extract_resume_profile()  (Task 2) — resume → ResumeProfile
+  - extract_job_profile()     (Task 3) — JD → JobProfile
+  - generate_match_reasoning() (Task 5) — evidence → explanation
+  - screen_resume()           (legacy) — combined resume+JD screening
 """
 
 import json
@@ -10,6 +14,7 @@ from pathlib import Path
 
 from app.core.config import settings
 from app.schemas.resume import ResumeProfile
+from app.schemas.job import JobProfile
 
 logger = logging.getLogger(__name__)
 
@@ -49,6 +54,17 @@ def _load_resume_prompt() -> str:
     raise FileNotFoundError(
         f"Resume extraction prompt not found at {prompt_path}. "
         "Please create prompts/resume_extraction.txt."
+    )
+
+
+def _load_jd_prompt() -> str:
+    """Load the JD-only extraction prompt."""
+    prompt_path = _PROMPT_DIR / "jd_extraction.txt"
+    if prompt_path.exists():
+        return prompt_path.read_text(encoding="utf-8")
+    raise FileNotFoundError(
+        f"JD extraction prompt not found at {prompt_path}. "
+        "Please create prompts/jd_extraction.txt."
     )
 
 
@@ -134,3 +150,32 @@ async def extract_resume_profile(resume_text: str) -> ResumeProfile:
     # Validate against Pydantic model — raises ValidationError on mismatch
     return ResumeProfile.model_validate(raw)
 
+
+# ── Task 3: Standalone JD extraction ─────────────────────
+
+async def extract_job_profile(jd_text: str) -> JobProfile:
+    """Extract structured job requirements from JD text using the configured LLM.
+
+    This function does NOT receive a resume — it performs
+    pure JD extraction and returns a validated JobProfile.
+
+    Raises:
+        ValueError: If jd_text is empty.
+        json.JSONDecodeError: If the LLM returns invalid JSON.
+        pydantic.ValidationError: If the JSON doesn't match JobProfile.
+    """
+    if not jd_text or not jd_text.strip():
+        raise ValueError("Cannot extract job profile: JD text is empty.")
+
+    system_prompt = _load_jd_prompt()
+    user_message = f"=== JOB DESCRIPTION ===\n{jd_text}"
+
+    if settings.llm_provider == "openai":
+        raw = await _call_openai(system_prompt, user_message)
+    elif settings.llm_provider == "gemini":
+        raw = await _call_gemini(system_prompt, user_message)
+    else:
+        raise ValueError(f"Unknown LLM provider: {settings.llm_provider}")
+
+    logger.debug("LLM JD extraction raw output: %s", raw)
+    return JobProfile.model_validate(raw)

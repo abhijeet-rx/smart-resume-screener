@@ -1,0 +1,10 @@
+[
+  "tests/test_resume_extraction.py::TestResumeExtraction::test_empty_resume_raises",
+  "tests/test_resume_extraction.py::TestResumeExtraction::test_extract_resume_profile_from_sample",
+  "tests/test_resume_extraction.py::TestResumeSchema::test_completely_empty_profile",
+  "tests/test_resume_extraction.py::TestResumeSchema::test_full_profile_from_dict",
+  "tests/test_resume_extraction.py::TestResumeSchema::test_minimal_valid_profile",
+  "tests/test_resume_extraction.py::TestResumeSchema::test_null_optional_fields_are_accepted",
+  "tests/test_resume_extraction.py::TestTextExtraction::test_extract_text_from_sample",
+  "tests/test_resume_extraction.py::TestTextExtraction::test_sample_resume_exists"
+]
