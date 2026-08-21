@@ -1,0 +1,5 @@
+[tool.pytest.ini_options]
+markers = [
+    "integration: tests that call the real LLM API (require API key)",
+]
+testpaths = ["tests"]
