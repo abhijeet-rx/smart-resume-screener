@@ -15,6 +15,7 @@ from pathlib import Path
 from app.core.config import settings
 from app.schemas.resume import ResumeProfile
 from app.schemas.job import JobProfile
+from app.schemas.match import MatchResult, MatchReasoning
 
 logger = logging.getLogger(__name__)
 
@@ -65,6 +66,17 @@ def _load_jd_prompt() -> str:
     raise FileNotFoundError(
         f"JD extraction prompt not found at {prompt_path}. "
         "Please create prompts/jd_extraction.txt."
+    )
+
+
+def _load_reasoning_prompt() -> str:
+    """Load the candidate reasoning / semantic scoring prompt."""
+    prompt_path = _PROMPT_DIR / "candidate_reasoning.txt"
+    if prompt_path.exists():
+        return prompt_path.read_text(encoding="utf-8")
+    raise FileNotFoundError(
+        f"Reasoning prompt not found at {prompt_path}. "
+        "Please create prompts/candidate_reasoning.txt."
     )
 
 
@@ -179,3 +191,74 @@ async def extract_job_profile(jd_text: str) -> JobProfile:
 
     logger.debug("LLM JD extraction raw output: %s", raw)
     return JobProfile.model_validate(raw)
+
+
+# ── Task 5: Semantic scoring + LLM reasoning ─────────────
+
+async def generate_match_reasoning(
+    resume: ResumeProfile,
+    job: JobProfile,
+    match: MatchResult,
+) -> tuple[MatchReasoning, float]:
+    """Ask the LLM to assess semantic relevance and explain the match.
+
+    The LLM receives pre-computed evidence (scores, strengths, gaps)
+    and returns a semantic_score plus a human-readable recommendation.
+
+    Returns:
+        MatchReasoning with semantic_score baked in.
+    """
+    system_prompt = _load_reasoning_prompt()
+
+    # Build evidence summary for the LLM
+    evidence = (
+        f"=== JOB ===\n"
+        f"Title: {job.job_title}\n"
+        f"Required Skills: {', '.join(job.required_skills)}\n"
+        f"Preferred Skills: {', '.join(job.preferred_skills)}\n"
+        f"Experience Required: {job.experience_required or 'Not specified'} years\n"
+        f"Education Required: {job.education_required or 'Not specified'}\n"
+        f"Responsibilities: {'; '.join(job.responsibilities[:5])}\n"
+        f"\n=== CANDIDATE ===\n"
+        f"Name: {resume.name}\n"
+        f"Skills: {', '.join(resume.skills)}\n"
+        f"Experience entries: {len(resume.experience)}\n"
+    )
+    for exp in resume.experience:
+        months = f"{exp.duration_months}mo" if exp.duration_months else "unknown duration"
+        evidence += f"  - {exp.role or 'Role'} at {exp.company or 'Company'} ({months}): {exp.description or 'N/A'}\n"
+    evidence += (
+        f"Education: {', '.join(f'{e.degree} {e.field}' for e in resume.education if e.degree)}\n"
+        f"\n=== DETERMINISTIC SCORES ===\n"
+        f"Skill Score: {match.skill_score}/100\n"
+        f"Experience Score: {match.experience_score}/100\n"
+        f"Education Score: {match.education_score}/100\n"
+        f"Total Experience: {match.total_experience_months or 0} months\n"
+        f"\n=== SKILL DETAILS ===\n"
+        f"Matched Required: {', '.join(match.skill_details.matched_required) or 'None'}\n"
+        f"Matched Preferred: {', '.join(match.skill_details.matched_preferred) or 'None'}\n"
+        f"Missing Required: {', '.join(match.skill_details.missing_required) or 'None'}\n"
+        f"Missing Preferred: {', '.join(match.skill_details.missing_preferred) or 'None'}\n"
+        f"Bonus Skills: {', '.join(match.skill_details.bonus) or 'None'}\n"
+        f"\n=== CURRENT ANALYSIS ===\n"
+        f"Strengths: {'; '.join(match.strengths) or 'None identified'}\n"
+        f"Gaps: {'; '.join(match.gaps) or 'None identified'}\n"
+    )
+
+    if settings.llm_provider == "openai":
+        raw = await _call_openai(system_prompt, evidence)
+    elif settings.llm_provider == "gemini":
+        raw = await _call_gemini(system_prompt, evidence)
+    else:
+        raise ValueError(f"Unknown LLM provider: {settings.llm_provider}")
+
+    logger.debug("LLM reasoning raw output: %s", raw)
+
+    # Extract semantic_score from LLM response and build MatchReasoning
+    semantic_score = float(raw.get("semantic_score", 0))
+    return MatchReasoning(
+        recommendation=raw.get("recommendation", "REVIEW"),
+        reasoning=raw.get("reasoning", ""),
+        strengths=raw.get("strengths", []),
+        gaps=raw.get("gaps", []),
+    ), semantic_score
