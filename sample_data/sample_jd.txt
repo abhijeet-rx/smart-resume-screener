@@ -1,0 +1,30 @@
+Senior Backend Engineer
+
+Company: Acme Corp
+Location: Remote (US)
+Type: Full-time
+
+About the Role:
+We're looking for a Senior Backend Engineer to design, build, and scale our core platform services. You'll work with a small, high-impact team shipping features that serve millions of users.
+
+Requirements:
+- 5+ years of professional software development experience
+- Strong proficiency in Python and at least one web framework (Django, FastAPI, Flask)
+- Experience with PostgreSQL or similar relational databases
+- Experience designing and building RESTful APIs
+- Familiarity with cloud platforms (AWS, GCP, or Azure)
+- Understanding of CI/CD pipelines and containerization (Docker, Kubernetes)
+- Strong computer science fundamentals (data structures, algorithms)
+
+Nice to Have:
+- Experience with message queues (RabbitMQ, Kafka)
+- GraphQL experience
+- Contributions to open-source projects
+- Experience with microservices architecture
+
+Benefits:
+- Competitive salary ($180k - $240k)
+- Equity
+- Unlimited PTO
+- Health, dental, vision
+- $2,000 annual learning budget

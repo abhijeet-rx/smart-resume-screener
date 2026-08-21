@@ -1,0 +1,38 @@
+JANE DOE
+jane.doe@email.com | (555) 123-4567 | linkedin.com/in/janedoe | github.com/janedoe
+
+SUMMARY
+Senior software engineer with 6 years of experience building scalable backend systems. Passionate about clean architecture, performance optimization, and developer experience.
+
+EXPERIENCE
+
+Senior Software Engineer — TechStart Inc.
+June 2021 – Present
+- Designed and built a high-throughput REST API using FastAPI and PostgreSQL, serving 2M+ requests/day
+- Migrated legacy Django monolith to microservices architecture, reducing deployment time by 70%
+- Implemented CI/CD pipelines with GitHub Actions and Docker, achieving 99.9% uptime
+- Led a team of 4 engineers; conducted code reviews, mentoring, and sprint planning
+
+Software Engineer — DataFlow Corp.
+Jan 2019 – May 2021
+- Developed ETL pipelines in Python processing 500GB+ daily
+- Built internal tools with Flask and React, reducing manual reporting by 80%
+- Managed PostgreSQL databases with complex query optimization
+- Deployed services on AWS (EC2, S3, RDS, Lambda)
+
+Junior Developer — WebCo
+Aug 2017 – Dec 2018
+- Built REST APIs with Django REST Framework
+- Wrote unit and integration tests (pytest), maintaining 90%+ coverage
+- Participated in agile ceremonies and pair programming
+
+EDUCATION
+
+B.S. Computer Science — State University, 2017
+GPA: 3.7/4.0
+
+SKILLS
+Python, FastAPI, Django, Flask, PostgreSQL, MySQL, Redis, Docker, Kubernetes, AWS (EC2, S3, RDS, Lambda), Git, GitHub Actions, REST APIs, GraphQL, Linux, Terraform
+
+CERTIFICATIONS
+- AWS Solutions Architect Associate (2022)
