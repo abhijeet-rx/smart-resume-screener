@@ -45,5 +45,12 @@ class Settings(BaseSettings):
         p.mkdir(parents=True, exist_ok=True)
         return p
 
+    # ── Auth ─────────────────────────────────────────────
+    api_key: str = ""  # When empty, auth is disabled (dev mode)
+
+    # ── Rate Limiting ────────────────────────────────────
+    rate_limit_screen: str = "10/minute"
+    rate_limit_jobs: str = "20/minute"
+
 
 settings = Settings()

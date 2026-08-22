@@ -1,141 +1,300 @@
 """
 API v1 router — /api/v1/*
+
+Endpoints:
+  POST   /jobs                    Create a job from JD text
+  GET    /jobs                    List all jobs (paginated)
+  GET    /jobs/{id}               Get job details
+  POST   /jobs/{id}/screen        Upload resume(s) and screen against a job
+  GET    /jobs/{id}/candidates    Ranked candidate list for a job (paginated)
+  GET    /candidates/{id}         Full candidate screening detail
+  GET    /health                  Health check
 """
 
 import logging
 from uuid import UUID
 
-from fastapi import APIRouter, UploadFile, File, Form, Depends, HTTPException
+from fastapi import APIRouter, UploadFile, File, Form, Query, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.core.database import get_db
-from app.models.screening import Screening
-from app.schemas.screening import (
-    ScreeningResponse,
-    ScreeningListItem,
-    ScreeningResult,
-    HealthResponse,
-)
+from app.core.auth import verify_api_key
+from app.core.limiter import limiter
+from app.models.job import Job
+from app.models.match_result import MatchResultDB
+from app.schemas.job import JobProfile
+from app.schemas.match import ScreeningOutput
 from app.services.parser import extract_text
-from app.services.llm import screen_resume
+from app.services.screener import screen_candidate
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1", tags=["screening"])
 
 
-@router.get("/health", response_model=HealthResponse)
+# ── Health ───────────────────────────────────────────────
+
+@router.get("/health")
 async def health_check():
-    return HealthResponse()
+    return {"status": "ok", "version": "0.2.0"}
 
 
-@router.post("/screen", response_model=ScreeningResponse)
-async def screen(
-    resume: UploadFile = File(..., description="Resume file (PDF, DOCX, or TXT)"),
-    jd: UploadFile = File(..., description="Job description file (PDF, DOCX, or TXT)"),
+# ── Jobs ─────────────────────────────────────────────────
+
+@router.post("/jobs", dependencies=[Depends(verify_api_key)])
+@limiter.limit(settings.rate_limit_jobs)
+async def create_job(
+    request: Request,
+    jd_text: str = Form(None, description="Paste job description text"),
+    jd_file: UploadFile = File(None, description="Or upload a JD file (PDF/DOCX/TXT)"),
     db: Session = Depends(get_db),
 ):
-    """Upload a resume + job description and receive structured screening JSON."""
-    # Save uploaded files
-    upload_dir = settings.upload_path
+    """Create a job from JD text or file. Extracts structured JobProfile via LLM."""
+    from app.services.llm import extract_job_profile
 
-    resume_path = upload_dir / resume.filename
-    jd_path = upload_dir / jd.filename
+    # Get JD text from form or file
+    text = ""
+    if jd_text and jd_text.strip():
+        text = jd_text.strip()
+    elif jd_file:
+        upload_dir = settings.upload_path
+        file_path = upload_dir / jd_file.filename
+        file_bytes = await jd_file.read()
+        file_path.write_bytes(file_bytes)
+        try:
+            text = extract_text(file_path)
+        finally:
+            file_path.unlink(missing_ok=True)
 
-    resume_bytes = await resume.read()
-    jd_bytes = await jd.read()
-
-    resume_path.write_bytes(resume_bytes)
-    jd_path.write_bytes(jd_bytes)
+    if not text.strip():
+        raise HTTPException(400, "Please provide job description text or upload a file.")
 
     try:
-        # Extract text
-        resume_text = extract_text(resume_path)
-        jd_text = extract_text(jd_path)
-
-        if not resume_text.strip():
-            raise HTTPException(400, "Could not extract text from resume file.")
-        if not jd_text.strip():
-            raise HTTPException(400, "Could not extract text from job description file.")
-
-        # Call LLM
-        result_dict = await screen_resume(resume_text, jd_text)
-        result = ScreeningResult(**result_dict)
-
-        # Persist to DB
-        screening = Screening(
-            candidate_name=result.candidate.name,
-            candidate_email=result.candidate.email,
-            resume_filename=resume.filename,
-            jd_filename=jd.filename,
-            match_score=result.match_score,
-            recommendation=result.recommendation,
-            result_json=result_dict,
-            resume_text=resume_text,
-            jd_text=jd_text,
-        )
-        db.add(screening)
-        db.commit()
-        db.refresh(screening)
-
-        return ScreeningResponse(
-            id=screening.id,
-            resume_filename=screening.resume_filename,
-            jd_filename=screening.jd_filename,
-            result=result,
-            created_at=screening.created_at,
-        )
-
-    except HTTPException:
-        raise
+        profile = await extract_job_profile(text)
     except Exception as e:
-        logger.exception("Screening failed")
-        raise HTTPException(500, f"Screening failed: {str(e)}")
-    finally:
-        # Clean up uploaded files
-        resume_path.unlink(missing_ok=True)
-        jd_path.unlink(missing_ok=True)
+        logger.exception("JD extraction failed")
+        raise HTTPException(500, f"Failed to extract job profile: {str(e)}")
+
+    job = Job(
+        title=profile.job_title,
+        description_text=text,
+        profile_json=profile.model_dump(),
+    )
+    db.add(job)
+    db.commit()
+    db.refresh(job)
+
+    return {
+        "id": str(job.id),
+        "title": job.title,
+        "profile": profile.model_dump(),
+        "created_at": job.created_at.isoformat(),
+    }
 
 
-@router.get("/screenings", response_model=list[ScreeningListItem])
-async def list_screenings(
-    skip: int = 0,
-    limit: int = 20,
+@router.get("/jobs")
+async def list_jobs(
+    skip: int = Query(0, ge=0, description="Number of records to skip"),
+    limit: int = Query(20, ge=1, le=100, description="Max records to return"),
     db: Session = Depends(get_db),
 ):
-    """List past screening results."""
+    """List all jobs (paginated)."""
+    total = db.query(Job).count()
     rows = (
-        db.query(Screening)
-        .order_by(Screening.created_at.desc())
+        db.query(Job)
+        .order_by(Job.created_at.desc())
         .offset(skip)
         .limit(limit)
         .all()
     )
-    return [
-        ScreeningListItem(
-            id=r.id,
-            candidate_name=r.candidate_name,
-            resume_filename=r.resume_filename,
-            match_score=r.match_score,
-            recommendation=r.recommendation,
-            created_at=r.created_at,
-        )
-        for r in rows
-    ]
+    return {
+        "total": total,
+        "skip": skip,
+        "limit": limit,
+        "jobs": [
+            {
+                "id": str(j.id),
+                "title": j.title,
+                "created_at": j.created_at.isoformat(),
+                "candidate_count": db.query(MatchResultDB).filter(
+                    MatchResultDB.job_id == j.id
+                ).count(),
+            }
+            for j in rows
+        ],
+    }
 
 
-@router.get("/screenings/{screening_id}", response_model=ScreeningResponse)
-async def get_screening(screening_id: UUID, db: Session = Depends(get_db)):
-    """Get a specific screening result by ID."""
-    screening = db.query(Screening).filter(Screening.id == screening_id).first()
-    if not screening:
-        raise HTTPException(404, "Screening not found.")
+@router.get("/jobs/{job_id}")
+async def get_job(job_id: UUID, db: Session = Depends(get_db)):
+    """Get job details with profile."""
+    job = db.query(Job).filter(Job.id == job_id).first()
+    if not job:
+        raise HTTPException(404, "Job not found.")
+    return {
+        "id": str(job.id),
+        "title": job.title,
+        "description_text": job.description_text,
+        "profile": job.profile_json,
+        "created_at": job.created_at.isoformat(),
+    }
 
-    result = ScreeningResult(**screening.result_json)
-    return ScreeningResponse(
-        id=screening.id,
-        resume_filename=screening.resume_filename,
-        jd_filename=screening.jd_filename,
-        result=result,
-        created_at=screening.created_at,
+
+# ── Screening ───────────────────────────────────────────
+
+@router.post("/jobs/{job_id}/screen", dependencies=[Depends(verify_api_key)])
+@limiter.limit(settings.rate_limit_screen)
+async def screen_resumes(
+    request: Request,
+    job_id: UUID,
+    resumes: list[UploadFile] = File(..., description="One or more resume files"),
+    db: Session = Depends(get_db),
+):
+    """Screen one or more resumes against a job. Returns ranked results."""
+    job = db.query(Job).filter(Job.id == job_id).first()
+    if not job:
+        raise HTTPException(404, "Job not found.")
+
+    jd_text = job.description_text
+    results = []
+    errors = []
+
+    for resume_file in resumes:
+        upload_dir = settings.upload_path
+        file_path = upload_dir / resume_file.filename
+        file_bytes = await resume_file.read()
+        file_path.write_bytes(file_bytes)
+
+        try:
+            resume_text = extract_text(file_path)
+            if not resume_text.strip():
+                errors.append({"file": resume_file.filename, "error": "Could not extract text"})
+                continue
+
+            output: ScreeningOutput = await screen_candidate(resume_text, jd_text)
+
+            # Persist
+            match_db = MatchResultDB(
+                job_id=job_id,
+                candidate_name=output.candidate_name,
+                candidate_email=output.candidate_email,
+                candidate_phone=output.candidate_phone,
+                resume_filename=resume_file.filename,
+                skill_score=output.match.skill_score,
+                semantic_score=output.match.semantic_score,
+                experience_score=output.match.experience_score,
+                education_score=output.match.education_score,
+                final_score=output.match.final_score,
+                recommendation=output.reasoning.recommendation,
+                resume_profile_json=output.model_dump(),
+                reasoning_json=output.reasoning.model_dump(),
+                match_details_json=output.match.model_dump(),
+            )
+            db.add(match_db)
+            db.commit()
+            db.refresh(match_db)
+
+            results.append({
+                "id": str(match_db.id),
+                "candidate_name": output.candidate_name,
+                "final_score": output.match.final_score,
+                "recommendation": output.reasoning.recommendation,
+                "resume_filename": resume_file.filename,
+            })
+
+        except Exception as e:
+            logger.exception(f"Screening failed for {resume_file.filename}")
+            errors.append({"file": resume_file.filename, "error": str(e)})
+        finally:
+            file_path.unlink(missing_ok=True)
+
+    # Sort by score descending
+    results.sort(key=lambda r: r["final_score"], reverse=True)
+
+    return {
+        "job_id": str(job_id),
+        "screened": len(results),
+        "errors": len(errors),
+        "results": results,
+        "error_details": errors,
+    }
+
+
+# ── Candidates ──────────────────────────────────────────
+
+@router.get("/jobs/{job_id}/candidates")
+async def list_candidates(
+    job_id: UUID,
+    skip: int = Query(0, ge=0, description="Number of records to skip"),
+    limit: int = Query(20, ge=1, le=100, description="Max records to return"),
+    db: Session = Depends(get_db),
+):
+    """Ranked candidate list for a job (paginated)."""
+    job = db.query(Job).filter(Job.id == job_id).first()
+    if not job:
+        raise HTTPException(404, "Job not found.")
+
+    total = (
+        db.query(MatchResultDB)
+        .filter(MatchResultDB.job_id == job_id)
+        .count()
     )
+    rows = (
+        db.query(MatchResultDB)
+        .filter(MatchResultDB.job_id == job_id)
+        .order_by(MatchResultDB.final_score.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+    return {
+        "job_id": str(job_id),
+        "job_title": job.title,
+        "total": total,
+        "skip": skip,
+        "limit": limit,
+        "candidates": [
+            {
+                "id": str(r.id),
+                "candidate_name": r.candidate_name,
+                "resume_filename": r.resume_filename,
+                "final_score": r.final_score,
+                "skill_score": r.skill_score,
+                "semantic_score": r.semantic_score,
+                "experience_score": r.experience_score,
+                "education_score": r.education_score,
+                "recommendation": r.recommendation,
+                "created_at": r.created_at.isoformat(),
+            }
+            for r in rows
+        ],
+    }
+
+
+@router.get("/candidates/{candidate_id}")
+async def get_candidate(candidate_id: UUID, db: Session = Depends(get_db)):
+    """Full screening detail for one candidate."""
+    row = db.query(MatchResultDB).filter(MatchResultDB.id == candidate_id).first()
+    if not row:
+        raise HTTPException(404, "Candidate screening not found.")
+
+    return {
+        "id": str(row.id),
+        "job_id": str(row.job_id),
+        "candidate_name": row.candidate_name,
+        "candidate_email": row.candidate_email,
+        "candidate_phone": row.candidate_phone,
+        "resume_filename": row.resume_filename,
+        "scores": {
+            "skill_score": row.skill_score,
+            "semantic_score": row.semantic_score,
+            "experience_score": row.experience_score,
+            "education_score": row.education_score,
+            "final_score": row.final_score,
+        },
+        "recommendation": row.recommendation,
+        "match_details": row.match_details_json,
+        "reasoning": row.reasoning_json,
+        "full_profile": row.resume_profile_json,
+        "created_at": row.created_at.isoformat(),
+    }
