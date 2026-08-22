@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
-import { Plus, Briefcase, FileText, Upload, Users, Calendar, ArrowRight, Loader2, Sparkles, Check } from 'lucide-react';
+import { Plus, Briefcase, FileText, Upload, Users, Calendar, Check, Loader2, Sparkles, AlertCircle } from 'lucide-react';
 import { api } from '../api';
 
 export default function JobManager({ selectedJobId, onSelectJob, onJobCreated }) {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  
-  // Job Creation Form State
-  const [createMode, setCreateMode] = useState('text'); // 'text' | 'file'
+
+  // Form state
+  const [createMode, setCreateMode] = useState('text');
   const [jdText, setJdText] = useState('');
   const [jdFile, setJdFile] = useState(null);
   const [creating, setCreating] = useState(false);
@@ -38,7 +38,7 @@ export default function JobManager({ selectedJobId, onSelectJob, onJobCreated })
     setCreateError('');
 
     if (createMode === 'text' && !jdText.trim()) {
-      setCreateError('Please enter a job description.');
+      setCreateError('Please enter job description text.');
       return;
     }
     if (createMode === 'file' && !jdFile) {
@@ -67,81 +67,75 @@ export default function JobManager({ selectedJobId, onSelectJob, onJobCreated })
   };
 
   return (
-    <div style={{ marginBottom: '24px' }}>
-      {/* Action Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+    <div className="space-y-4">
+      {/* Header Bar */}
+      <div className="flex items-center justify-between gap-4 flex-wrap pb-2 border-b border-slate-800/80">
         <div>
-          <h2 style={{ fontSize: '1.2rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Briefcase size={20} color="var(--primary)" /> Target Job Descriptions
+          <h2 className="text-base font-bold text-slate-100 flex items-center gap-2">
+            <Briefcase className="w-4 h-4 text-indigo-400" /> Target Job Descriptions
           </h2>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-            Select a job to view ranked candidates or screen new resumes
-          </p>
+          <p className="text-xs text-slate-400 mt-0.5">Select an active job role to screen candidates or view ranked leaderboards.</p>
         </div>
 
-        <button 
-          onClick={() => setShowCreateModal(true)} 
-          className="btn btn-primary"
+        <button
+          onClick={() => setShowCreateModal(true)}
+          className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-500 shadow-md shadow-indigo-600/20 transition-all"
         >
-          <Plus size={16} /> Post New Job
+          <Plus className="w-4 h-4" /> Post New Job
         </button>
       </div>
 
-      {/* Jobs Carousel / Grid */}
+      {/* Jobs Grid */}
       {loading ? (
-        <div className="glass-panel" style={{ padding: '30px', textAlign: 'center', color: 'var(--text-muted)' }}>
-          <Loader2 size={24} className="spin" style={{ margin: '0 auto 8px' }} />
-          Loading jobs...
+        <div className="bg-slate-900/60 border border-slate-800/80 rounded-xl p-12 text-center text-slate-400">
+          <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-indigo-400" />
+          <span className="text-xs">Loading target job descriptions...</span>
         </div>
       ) : jobs.length === 0 ? (
-        <div className="glass-panel" style={{ padding: '40px 20px', textAlign: 'center' }}>
-          <Briefcase size={36} color="var(--text-dim)" style={{ margin: '0 auto 12px' }} />
-          <h3 style={{ fontSize: '1rem', color: 'var(--text-main)', marginBottom: '4px' }}>No Job Descriptions Posted Yet</h3>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '16px' }}>
-            Paste a Job Description or upload a file to extract structured requirements.
+        <div className="bg-slate-900/60 border border-slate-800/80 rounded-xl p-12 text-center">
+          <Briefcase className="w-10 h-10 text-slate-600 mx-auto mb-3" />
+          <h3 className="text-sm font-semibold text-slate-200 mb-1">No Jobs Posted Yet</h3>
+          <p className="text-xs text-slate-400 mb-4 max-w-sm mx-auto">
+            Paste a Job Description or upload a document to let our AI engine extract requirements and create a target role.
           </p>
-          <button onClick={() => setShowCreateModal(true)} className="btn btn-primary">
-            <Plus size={16} /> Post First Job
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-500 shadow-md shadow-indigo-600/20"
+          >
+            <Plus className="w-4 h-4" /> Post First Job
           </button>
         </div>
       ) : (
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', 
-          gap: '14px' 
-        }}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {jobs.map((job) => {
             const isSelected = job.id === selectedJobId;
             return (
               <div
                 key={job.id}
                 onClick={() => onSelectJob(job.id)}
-                className={`glass-panel ${isSelected ? 'glass-panel-glow' : ''}`}
-                style={{
-                  padding: '16px 20px',
-                  cursor: 'pointer',
-                  background: isSelected ? 'rgba(99, 102, 241, 0.12)' : 'var(--bg-card)',
-                  borderColor: isSelected ? 'var(--primary)' : 'var(--border-color)',
-                  position: 'relative'
-                }}
+                className={`p-4 rounded-xl border transition-all cursor-pointer relative ${
+                  isSelected
+                    ? 'bg-indigo-600/10 border-indigo-500/50 shadow-md shadow-indigo-500/10'
+                    : 'bg-slate-900/60 border-slate-800/80 hover:border-slate-700 hover:bg-slate-900'
+                }`}
               >
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px', marginBottom: '8px' }}>
-                  <h3 style={{ fontSize: '1rem', fontWeight: 700, color: isSelected ? '#a5b4fc' : 'var(--text-main)', lineHeight: 1.3 }}>
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <h3 className={`text-sm font-bold truncate ${isSelected ? 'text-indigo-300' : 'text-slate-200'}`}>
                     {job.title || 'Untitled Role'}
                   </h3>
                   {isSelected && (
-                    <span style={{ background: 'var(--primary)', borderRadius: '50%', padding: '2px', display: 'flex' }}>
-                      <Check size={12} color="#fff" />
+                    <span className="w-4 h-4 rounded-full bg-indigo-600 flex items-center justify-center shrink-0">
+                      <Check className="w-2.5 h-2.5 text-white" />
                     </span>
                   )}
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <Users size={14} color="var(--accent-cyan)" /> {job.candidate_count || 0} Candidates
+                <div className="flex items-center gap-4 text-xs text-slate-400">
+                  <span className="flex items-center gap-1.5">
+                    <Users className="w-3.5 h-3.5 text-cyan-400" /> {job.candidate_count || 0} candidates
                   </span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <Calendar size={14} /> {new Date(job.created_at).toLocaleDateString()}
+                  <span className="flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5 text-slate-500" /> {new Date(job.created_at).toLocaleDateString()}
                   </span>
                 </div>
               </div>
@@ -150,97 +144,101 @@ export default function JobManager({ selectedJobId, onSelectJob, onJobCreated })
         </div>
       )}
 
-      {/* Create Job Modal */}
+      {/* Post New Job Modal */}
       {showCreateModal && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(0,0,0,0.75)',
-          backdropFilter: 'blur(8px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 100,
-          padding: '20px'
-        }}>
-          <div className="glass-panel animate-fade-in" style={{ width: '100%', maxWidth: '580px', padding: '28px' }}>
-            <h3 style={{ fontSize: '1.25rem', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Sparkles size={20} color="var(--primary)" /> Post New Job Description
-            </h3>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '20px' }}>
-              Our AI extracts required skills, experience thresholds, and education requirements.
-            </p>
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center border border-indigo-500/20">
+                <Sparkles className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-slate-100">Post New Job Description</h3>
+                <p className="text-[11px] text-slate-400">Extracts skills, experience thresholds, and education requirements automatically.</p>
+              </div>
+            </div>
 
-            {/* Input Mode Selector */}
-            <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+            {/* Selector */}
+            <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
                 onClick={() => setCreateMode('text')}
-                className={`btn ${createMode === 'text' ? 'btn-primary' : 'btn-secondary'}`}
-                style={{ flex: 1, padding: '8px' }}
+                className={`flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold border transition-all ${
+                  createMode === 'text'
+                    ? 'bg-indigo-600 text-white border-indigo-500/30'
+                    : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-slate-200'
+                }`}
               >
-                <FileText size={16} /> Paste Text
+                <FileText className="w-4 h-4" /> Paste Text
               </button>
               <button
                 type="button"
                 onClick={() => setCreateMode('file')}
-                className={`btn ${createMode === 'file' ? 'btn-primary' : 'btn-secondary'}`}
-                style={{ flex: 1, padding: '8px' }}
+                className={`flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold border transition-all ${
+                  createMode === 'file'
+                    ? 'bg-indigo-600 text-white border-indigo-500/30'
+                    : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-slate-200'
+                }`}
               >
-                <Upload size={16} /> Upload Document
+                <Upload className="w-4 h-4" /> Upload File
               </button>
             </div>
 
-            <form onSubmit={handleCreateJob}>
+            <form onSubmit={handleCreateJob} className="space-y-4">
               {createMode === 'text' ? (
-                <div className="form-group">
-                  <label className="form-label">Job Description Text</label>
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-medium text-slate-400">Job Description Text</label>
                   <textarea
-                    className="form-textarea"
                     placeholder="Paste the full job description text here..."
-                    rows={8}
+                    rows={7}
                     value={jdText}
                     onChange={(e) => setJdText(e.target.value)}
+                    className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-lg text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 resize-y"
                   />
                 </div>
               ) : (
-                <div className="form-group">
-                  <label className="form-label">Upload JD File (.pdf, .docx, .txt)</label>
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-medium text-slate-400">Upload Document (.pdf, .docx, .txt)</label>
                   <input
                     type="file"
                     accept=".pdf,.docx,.txt"
-                    className="form-input"
                     onChange={(e) => setJdFile(e.target.files[0] || null)}
+                    className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-lg text-slate-200 focus:outline-none focus:border-indigo-500"
                   />
                   {jdFile && (
-                    <p style={{ fontSize: '0.8rem', color: 'var(--accent-emerald)', marginTop: '4px' }}>
-                      Selected: {jdFile.name} ({(jdFile.size / 1024).toFixed(1)} KB)
-                    </p>
+                    <p className="text-[11px] text-emerald-400">Selected: {jdFile.name} ({(jdFile.size / 1024).toFixed(1)} KB)</p>
                   )}
                 </div>
               )}
 
               {createError && (
-                <div style={{ background: 'rgba(244, 63, 94, 0.15)', border: '1px solid rgba(244, 63, 94, 0.3)', color: '#f87171', padding: '10px 14px', borderRadius: '8px', fontSize: '0.85rem', marginBottom: '16px' }}>
-                  {createError}
+                <div className="flex items-center gap-2 p-3 bg-rose-500/10 border border-rose-500/30 text-rose-400 rounded-lg text-xs">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{createError}</span>
                 </div>
               )}
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '24px' }}>
-                <button 
-                  type="button" 
-                  onClick={() => setShowCreateModal(false)} 
-                  className="btn btn-secondary"
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateModal(false)}
                   disabled={creating}
+                  className="px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800 disabled:opacity-50"
                 >
                   Cancel
                 </button>
-                <button 
-                  type="submit" 
-                  className="btn btn-primary"
+                <button
+                  type="submit"
                   disabled={creating}
+                  className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-500 shadow-md shadow-indigo-600/20 disabled:opacity-50"
                 >
-                  {creating ? <><Loader2 size={16} className="spin" /> Extracting Profile...</> : 'Extract & Save Job'}
+                  {creating ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" /> Extracting Requirements...
+                    </>
+                  ) : (
+                    'Extract & Save Job'
+                  )}
                 </button>
               </div>
             </form>

@@ -1,8 +1,8 @@
 import { useState, useRef } from 'react';
-import { UploadCloud, FileText, X, AlertTriangle, CheckCircle, Loader2, Sparkles } from 'lucide-react';
+import { UploadCloud, FileText, X, AlertTriangle, CheckCircle2, Loader2, Sparkles } from 'lucide-react';
 import { api } from '../api';
 
-const MAX_SIZE_BYTES = 10 * 1024 * 1024; // 10MB
+const MAX_SIZE_BYTES = 10 * 1024 * 1024;
 const ALLOWED_EXTS = ['.pdf', '.docx', '.txt'];
 
 export default function ResumeUploader({ targetJobId, onScreeningComplete }) {
@@ -23,7 +23,7 @@ export default function ResumeUploader({ targetJobId, onScreeningComplete }) {
         return;
       }
       if (file.size > MAX_SIZE_BYTES) {
-        errs.push(`${file.name}: Exceeds 10MB size limit (${(file.size / (1024 * 1024)).toFixed(1)}MB)`);
+        errs.push(`${file.name}: Exceeds 10MB limit (${(file.size / (1024 * 1024)).toFixed(1)}MB)`);
         return;
       }
       if (file.size === 0) {
@@ -56,7 +56,7 @@ export default function ResumeUploader({ targetJobId, onScreeningComplete }) {
 
   const handleUploadAndScreen = async () => {
     if (!targetJobId) {
-      alert('Please select or post a job first.');
+      alert('Please select or post a target job first.');
       return;
     }
     if (selectedFiles.length === 0) return;
@@ -79,78 +79,45 @@ export default function ResumeUploader({ targetJobId, onScreeningComplete }) {
   };
 
   return (
-    <div className="glass-panel" style={{ padding: '24px', marginBottom: '24px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-        <div>
-          <h3 style={{ fontSize: '1.1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <UploadCloud size={20} color="var(--accent-cyan)" /> Batch Resume Screening
-          </h3>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-            Upload PDF, DOCX, or TXT resumes to evaluate against the selected job description.
-          </p>
-        </div>
+    <div id="batch-screener-section" className="bg-slate-900/60 border border-slate-800/80 rounded-xl p-6 space-y-4">
+      <div>
+        <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
+          <UploadCloud className="w-5 h-5 text-indigo-400" /> Batch Resume Screening Hub
+        </h3>
+        <p className="text-xs text-slate-400 mt-0.5">
+          Upload PDF, DOCX, or TXT candidate resumes to score and rank against your selected job role.
+        </p>
       </div>
 
-      {/* Drag and Drop Zone */}
+      {/* Drag & Drop Zone */}
       <div
         onDragOver={(e) => e.preventDefault()}
         onDrop={handleDrop}
         onClick={() => fileInputRef.current?.click()}
-        style={{
-          border: '2px dashed rgba(99, 102, 241, 0.4)',
-          borderRadius: 'var(--radius-md)',
-          padding: '36px 20px',
-          textAlign: 'center',
-          background: 'rgba(15, 23, 42, 0.4)',
-          cursor: 'pointer',
-          transition: 'all 0.2s ease',
-          marginBottom: '16px'
-        }}
+        className="border-2 border-dashed border-indigo-500/30 hover:border-indigo-500/60 bg-slate-950/60 rounded-xl p-8 text-center cursor-pointer transition-all duration-200 group"
       >
         <input
           type="file"
           ref={fileInputRef}
           multiple
           accept=".pdf,.docx,.txt"
-          style={{ display: 'none' }}
+          className="hidden"
           onChange={handleFileChange}
         />
-        <div style={{
-          width: '52px',
-          height: '52px',
-          borderRadius: '50%',
-          background: 'rgba(99, 102, 241, 0.12)',
-          color: 'var(--primary)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          margin: '0 auto 12px'
-        }}>
-          <UploadCloud size={28} />
+        <div className="w-12 h-12 rounded-full bg-indigo-500/10 text-indigo-400 flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform border border-indigo-500/20">
+          <UploadCloud className="w-6 h-6" />
         </div>
-        <h4 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '4px' }}>
-          Drag & Drop Resumes Here
-        </h4>
-        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-          or click to browse from your computer (PDF, DOCX, TXT — max 10MB per file)
-        </p>
+        <h4 className="text-sm font-bold text-slate-200 mb-1">Drag & Drop Resumes Here</h4>
+        <p className="text-xs text-slate-400">or click to browse from your computer (PDF, DOCX, TXT — max 10MB per file)</p>
       </div>
 
-      {/* Client-side Validation Error Messages */}
+      {/* Validation Errors */}
       {fileErrors.length > 0 && (
-        <div style={{
-          background: 'rgba(244, 63, 94, 0.12)',
-          border: '1px solid rgba(244, 63, 94, 0.3)',
-          color: '#f87171',
-          padding: '12px 16px',
-          borderRadius: 'var(--radius-sm)',
-          fontSize: '0.85rem',
-          marginBottom: '16px'
-        }}>
-          <div style={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
-            <AlertTriangle size={16} /> File Validation Warnings
+        <div className="bg-rose-500/10 border border-rose-500/30 text-rose-400 rounded-xl p-4 text-xs space-y-1">
+          <div className="font-semibold flex items-center gap-1.5 mb-1">
+            <AlertTriangle className="w-4 h-4 shrink-0" /> File Validation Warnings
           </div>
-          <ul style={{ paddingLeft: '20px' }}>
+          <ul className="list-disc pl-5 space-y-0.5 text-[11px]">
             {fileErrors.map((err, idx) => (
               <li key={idx}>{err}</li>
             ))}
@@ -158,59 +125,50 @@ export default function ResumeUploader({ targetJobId, onScreeningComplete }) {
         </div>
       )}
 
-      {/* File Staging List */}
+      {/* Staged File Queue */}
       {selectedFiles.length > 0 && (
-        <div style={{ marginBottom: '16px' }}>
-          <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '8px' }}>
-            Staged Resumes ({selectedFiles.length})
+        <div className="space-y-3 pt-2">
+          <div className="flex items-center justify-between text-xs text-slate-400">
+            <span className="font-semibold text-slate-300">Staged Resumes ({selectedFiles.length})</span>
+            <button
+              onClick={() => setSelectedFiles([])}
+              className="text-[11px] text-rose-400 hover:underline"
+            >
+              Clear all
+            </button>
           </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+          <div className="flex flex-wrap gap-2">
             {selectedFiles.map((file, idx) => (
               <div
                 key={idx}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  background: 'rgba(255, 255, 255, 0.06)',
-                  border: '1px solid var(--border-color)',
-                  padding: '6px 12px',
-                  borderRadius: '9999px',
-                  fontSize: '0.82rem'
-                }}
+                className="flex items-center gap-2 bg-slate-950 border border-slate-800 px-3 py-1.5 rounded-lg text-xs"
               >
-                <FileText size={14} color="var(--primary)" />
-                <span style={{ maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {file.name}
-                </span>
-                <span style={{ color: 'var(--text-dim)', fontSize: '0.75rem' }}>
-                  ({(file.size / 1024).toFixed(0)}KB)
-                </span>
-                <X
-                  size={14}
-                  color="var(--text-muted)"
-                  style={{ cursor: 'pointer' }}
+                <FileText className="w-3.5 h-3.5 text-indigo-400" />
+                <span className="max-w-[160px] truncate text-slate-200 font-medium">{file.name}</span>
+                <span className="text-[11px] text-slate-500">({(file.size / 1024).toFixed(0)}KB)</span>
+                <button
                   onClick={() => removeFile(idx)}
-                />
+                  className="text-slate-500 hover:text-slate-300 ml-1"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
               </div>
             ))}
           </div>
 
-          <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'flex-end' }}>
+          <div className="flex justify-end pt-2">
             <button
               onClick={handleUploadAndScreen}
               disabled={uploading || !targetJobId}
-              className="btn btn-primary"
+              className="flex items-center gap-2 px-5 py-2 rounded-lg text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-500 shadow-lg shadow-indigo-600/25 disabled:opacity-50 transition-all"
             >
               {uploading ? (
                 <>
-                  <Loader2 size={16} className="spin" />
-                  Screening {selectedFiles.length} Resumes...
+                  <Loader2 className="w-4 h-4 animate-spin" /> Screening {selectedFiles.length} Resumes...
                 </>
               ) : (
                 <>
-                  <Sparkles size={16} />
-                  Run AI Screening ({selectedFiles.length} files)
+                  <Sparkles className="w-4 h-4" /> Run AI Screening ({selectedFiles.length} files)
                 </>
               )}
             </button>
@@ -220,22 +178,16 @@ export default function ResumeUploader({ targetJobId, onScreeningComplete }) {
 
       {/* Batch Result Report */}
       {batchResult && (
-        <div style={{
-          background: 'rgba(16, 185, 129, 0.1)',
-          border: '1px solid rgba(16, 185, 129, 0.3)',
-          padding: '16px 20px',
-          borderRadius: 'var(--radius-sm)',
-          fontSize: '0.88rem'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#34d399', fontWeight: 600, marginBottom: '6px' }}>
-            <CheckCircle size={18} /> Screening Complete!
+        <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4 text-xs space-y-1">
+          <div className="flex items-center gap-2 text-emerald-400 font-semibold">
+            <CheckCircle2 className="w-4 h-4" /> Batch Screening Complete!
           </div>
-          <p style={{ color: 'var(--text-main)' }}>
-            Successfully evaluated <strong>{batchResult.screened}</strong> candidate(s). 
-            {batchResult.errors > 0 && <span style={{ color: '#f87171' }}> ({batchResult.errors} errors)</span>}
+          <p className="text-slate-300">
+            Successfully evaluated <strong>{batchResult.screened}</strong> candidate(s).
+            {batchResult.errors > 0 && <span className="text-rose-400"> ({batchResult.errors} errors)</span>}
           </p>
           {batchResult.error_details && batchResult.error_details.length > 0 && (
-            <div style={{ marginTop: '8px', fontSize: '0.8rem', color: '#f87171' }}>
+            <div className="text-rose-400 pt-1 text-[11px]">
               {batchResult.error_details.map((err, idx) => (
                 <div key={idx}>• {err.file}: {err.error}</div>
               ))}

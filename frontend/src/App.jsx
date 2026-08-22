@@ -3,10 +3,10 @@ import Header from './components/Header';
 import JobManager from './components/JobManager';
 import ResumeUploader from './components/ResumeUploader';
 import CandidateLeaderboard from './components/CandidateLeaderboard';
-import './App.css';
+import AnalyticsView from './components/AnalyticsView';
 
 function App() {
-  const [activeTab, setActiveTab] = useState('jobs');
+  const [activeTab, setActiveTab] = useState('dashboard');
   const [selectedJobId, setSelectedJobId] = useState(null);
   const [refreshCandidatesTrigger, setRefreshCandidatesTrigger] = useState(0);
 
@@ -19,46 +19,68 @@ function App() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100 font-sans selection:bg-indigo-500 selection:text-white">
+      {/* Top Navigation Bar */}
       <Header activeTab={activeTab} setActiveTab={setActiveTab} />
 
-      <main style={{ flex: 1, maxWidth: '1400px', width: '100%', margin: '0 auto', padding: '0 24px 48px' }}>
-        {activeTab === 'jobs' ? (
-          <div>
-            {/* Job Descriptions Manager */}
+      {/* Main Content Area */}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+        {activeTab === 'dashboard' && (
+          <div className="space-y-6 animate-fade-in">
             <JobManager
               selectedJobId={selectedJobId}
               onSelectJob={setSelectedJobId}
               onJobCreated={handleJobCreated}
             />
 
-            {/* Resume Upload & Batch Screening */}
-            {selectedJobId && (
-              <ResumeUploader
-                targetJobId={selectedJobId}
-                onScreeningComplete={handleScreeningComplete}
-              />
-            )}
-
-            {/* Candidate Leaderboard & Rankings */}
             <CandidateLeaderboard
               selectedJobId={selectedJobId}
               refreshTrigger={refreshCandidatesTrigger}
             />
           </div>
-        ) : null}
+        )}
+
+        {activeTab === 'jobs' && (
+          <div className="space-y-6 animate-fade-in">
+            <JobManager
+              selectedJobId={selectedJobId}
+              onSelectJob={setSelectedJobId}
+              onJobCreated={handleJobCreated}
+            />
+          </div>
+        )}
+
+        {activeTab === 'screener' && (
+          <div className="space-y-6 animate-fade-in">
+            <JobManager
+              selectedJobId={selectedJobId}
+              onSelectJob={setSelectedJobId}
+              onJobCreated={handleJobCreated}
+            />
+
+            <ResumeUploader
+              targetJobId={selectedJobId}
+              onScreeningComplete={handleScreeningComplete}
+            />
+          </div>
+        )}
+
+        {activeTab === 'analytics' && (
+          <div className="space-y-6 animate-fade-in">
+            <JobManager
+              selectedJobId={selectedJobId}
+              onSelectJob={setSelectedJobId}
+              onJobCreated={handleJobCreated}
+            />
+
+            <AnalyticsView selectedJobId={selectedJobId} />
+          </div>
+        )}
       </main>
 
       {/* Footer */}
-      <footer style={{
-        padding: '20px 24px',
-        borderTop: '1px solid var(--border-color)',
-        textAlign: 'center',
-        fontSize: '0.8rem',
-        color: 'var(--text-muted)',
-        background: 'rgba(9, 13, 22, 0.8)'
-      }}>
-        Smart Resume Screener v0.2.0 • Deterministic Matching + LLM Reasoning Pipeline
+      <footer className="border-t border-slate-800/80 py-6 px-4 text-center text-xs text-slate-500 bg-slate-950">
+        Smart Resume Screener v0.2.0 • Enterprise Deterministic Matching + LLM Reasoning Pipeline
       </footer>
     </div>
   );

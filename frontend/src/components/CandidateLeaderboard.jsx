@@ -11,7 +11,7 @@ export default function CandidateLeaderboard({ selectedJobId, refreshTrigger }) 
   const [loading, setLoading] = useState(false);
   const [filterRec, setFilterRec] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState('score'); // 'score' | 'experience' | 'name'
+  const [sortBy, setSortBy] = useState('score');
   const [sortDir, setSortDir] = useState('desc');
   const [inspectCandidateId, setInspectCandidateId] = useState(null);
 
@@ -82,70 +82,72 @@ export default function CandidateLeaderboard({ selectedJobId, refreshTrigger }) 
     return sortDir === 'asc' ? valA - valB : valB - valA;
   });
 
-  const getRecommendationBadge = (rec) => {
+  const renderBadge = (rec) => {
     switch (rec?.toUpperCase()) {
       case 'SHORTLIST':
       case 'STRONG_MATCH':
-        return <span className="badge badge-shortlist"><CheckCircle2 size={12} /> SHORTLIST</span>;
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wide uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+            <CheckCircle2 className="w-3 h-3" /> SHORTLIST
+          </span>
+        );
       case 'GOOD_MATCH':
-        return <span className="badge badge-good"><Sparkles size={12} /> GOOD MATCH</span>;
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wide uppercase bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+            <Sparkles className="w-3 h-3" /> GOOD MATCH
+          </span>
+        );
       case 'REVIEW':
       case 'PARTIAL_MATCH':
-        return <span className="badge badge-review"><AlertCircle size={12} /> REVIEW</span>;
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wide uppercase bg-amber-500/10 text-amber-400 border border-amber-500/20">
+            <AlertCircle className="w-3 h-3" /> REVIEW
+          </span>
+        );
       default:
-        return <span className="badge badge-reject"><XCircle size={12} /> REJECT</span>;
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wide uppercase bg-rose-500/10 text-rose-400 border border-rose-500/20">
+            <XCircle className="w-3 h-3" /> REJECT
+          </span>
+        );
     }
   };
 
-
-
   return (
-    <div className="glass-panel" style={{ padding: '24px' }}>
-      {/* Header & Controls */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px', marginBottom: '20px' }}>
+    <div id="leaderboard-section" className="bg-slate-900/60 border border-slate-800/80 rounded-xl p-6 space-y-4">
+      {/* Header Bar */}
+      <div className="flex items-center justify-between gap-4 flex-wrap pb-3 border-b border-slate-800/80">
         <div>
-          <h3 style={{ fontSize: '1.25rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Trophy size={20} color="var(--accent-amber)" /> Candidates {jobTitle ? `for ${jobTitle}` : ''}
-            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 400 }}>
-              ({sortedCandidates.length} of {totalCount})
-            </span>
+          <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
+            <Trophy className="w-5 h-5 text-amber-400" /> Candidate Leaderboard {jobTitle ? `for ${jobTitle}` : ''}
+            <span className="text-xs font-normal text-slate-400">({sortedCandidates.length} of {totalCount})</span>
           </h3>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-            Deterministic matching & semantic LLM candidate ranking
-          </p>
+          <p className="text-xs text-slate-400 mt-0.5">Ranked candidate recommendations evaluated by deterministic matching + semantic LLM analysis.</p>
         </div>
 
-        {/* Filters & Controls */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+        {/* Controls */}
+        <div className="flex items-center gap-2 flex-wrap">
           {/* Search Box */}
-          <div style={{ position: 'relative' }}>
-            <Search size={14} color="var(--text-muted)" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)' }} />
+          <div className="relative">
+            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Search candidate name..."
+              placeholder="Search candidate or filename..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="form-input"
-              style={{ paddingLeft: '30px', width: '200px', padding: '6px 10px 6px 30px', fontSize: '0.82rem' }}
+              className="pl-8 pr-3 py-1.5 text-xs bg-slate-950 border border-slate-800 rounded-lg text-slate-200 focus:outline-none focus:border-indigo-500 w-48"
             />
           </div>
 
-          {/* Recommendation Filter Tabs */}
-          <div style={{ display: 'flex', background: 'rgba(15, 23, 42, 0.6)', padding: '3px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+          {/* Filter Pills */}
+          <div className="flex bg-slate-950 p-1 rounded-lg border border-slate-800 text-[11px] font-medium">
             {['ALL', 'SHORTLIST', 'GOOD_MATCH', 'REVIEW', 'REJECT'].map((r) => (
               <button
                 key={r}
                 onClick={() => setFilterRec(r)}
-                style={{
-                  background: filterRec === r ? 'var(--primary)' : 'transparent',
-                  color: filterRec === r ? '#fff' : 'var(--text-muted)',
-                  border: 'none',
-                  padding: '4px 10px',
-                  borderRadius: '6px',
-                  fontSize: '0.75rem',
-                  fontWeight: 600,
-                  cursor: 'pointer'
-                }}
+                className={`px-2.5 py-1 rounded-md transition-colors ${
+                  filterRec === r ? 'bg-indigo-600 text-white font-semibold' : 'text-slate-400 hover:text-slate-200'
+                }`}
               >
                 {r === 'GOOD_MATCH' ? 'GOOD' : r}
               </button>
@@ -154,59 +156,57 @@ export default function CandidateLeaderboard({ selectedJobId, refreshTrigger }) 
         </div>
       </div>
 
-      {/* Candidate Leaderboard Table */}
+      {/* Table Content */}
       {loading ? (
-        <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
-          <Loader2 size={24} className="spin" style={{ margin: '0 auto 8px' }} />
-          Loading candidate leaderboard...
+        <div className="py-12 text-center text-slate-400">
+          <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-indigo-400" />
+          <span className="text-xs">Loading candidate rankings...</span>
         </div>
       ) : !selectedJobId ? (
-        <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
-          Select a job description above to view candidates.
+        <div className="py-12 text-center text-slate-400 text-xs">
+          Select a target job description above to view candidate rankings.
         </div>
       ) : sortedCandidates.length === 0 ? (
-        <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
-          <UserCheck size={36} color="var(--text-dim)" style={{ margin: '0 auto 12px' }} />
-          <h4 style={{ fontSize: '0.95rem', color: 'var(--text-main)', marginBottom: '4px' }}>No Screened Candidates Found</h4>
-          <p style={{ fontSize: '0.85rem' }}>
-            Upload resumes above to screen candidates for this job description.
-          </p>
+        <div className="py-12 text-center text-slate-400">
+          <UserCheck className="w-10 h-10 text-slate-600 mx-auto mb-3" />
+          <h4 className="text-sm font-semibold text-slate-200 mb-1">No Screened Candidates Found</h4>
+          <p className="text-xs text-slate-400">Upload candidate resumes in the Screening Hub to generate matches for this role.</p>
         </div>
       ) : (
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem', textAlign: 'left' }}>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
             <thead>
-              <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)', fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                <th style={{ padding: '12px 14px', width: '50px', textAlign: 'center' }}>#</th>
-                <th 
+              <tr className="border-b border-slate-800 text-slate-400 uppercase tracking-wider text-[10px] font-semibold">
+                <th className="py-3 px-4 w-12 text-center">#</th>
+                <th
                   onClick={() => handleSort('name')}
-                  style={{ padding: '12px 14px', cursor: 'pointer', userSelect: 'none' }}
+                  className="py-3 px-4 cursor-pointer select-none hover:text-slate-200"
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    Candidate {sortBy === 'name' ? (sortDir === 'asc' ? <ArrowUp size={13} /> : <ArrowDown size={13} />) : <ArrowUpDown size={13} color="var(--text-dim)" />}
+                  <div className="flex items-center gap-1.5">
+                    Candidate {sortBy === 'name' ? (sortDir === 'asc' ? <ArrowUp className="w-3 h-3 text-indigo-400" /> : <ArrowDown className="w-3 h-3 text-indigo-400" />) : <ArrowUpDown className="w-3 h-3 text-slate-600" />}
                   </div>
                 </th>
-                <th 
+                <th
                   onClick={() => handleSort('score')}
-                  style={{ padding: '12px 14px', cursor: 'pointer', userSelect: 'none', width: '180px' }}
+                  className="py-3 px-4 cursor-pointer select-none hover:text-slate-200 w-44"
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    Match Score {sortBy === 'score' ? (sortDir === 'asc' ? <ArrowUp size={13} /> : <ArrowDown size={13} />) : <ArrowUpDown size={13} color="var(--text-dim)" />}
+                  <div className="flex items-center gap-1.5">
+                    Match Score {sortBy === 'score' ? (sortDir === 'asc' ? <ArrowUp className="w-3 h-3 text-indigo-400" /> : <ArrowDown className="w-3 h-3 text-indigo-400" />) : <ArrowUpDown className="w-3 h-3 text-slate-600" />}
                   </div>
                 </th>
-                <th 
+                <th
                   onClick={() => handleSort('experience')}
-                  style={{ padding: '12px 14px', cursor: 'pointer', userSelect: 'none', width: '140px' }}
+                  className="py-3 px-4 cursor-pointer select-none hover:text-slate-200 w-32"
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    Relevant Exp {sortBy === 'experience' ? (sortDir === 'asc' ? <ArrowUp size={13} /> : <ArrowDown size={13} />) : <ArrowUpDown size={13} color="var(--text-dim)" />}
+                  <div className="flex items-center gap-1.5">
+                    Relevant Exp {sortBy === 'experience' ? (sortDir === 'asc' ? <ArrowUp className="w-3 h-3 text-indigo-400" /> : <ArrowDown className="w-3 h-3 text-indigo-400" />) : <ArrowUpDown className="w-3 h-3 text-slate-600" />}
                   </div>
                 </th>
-                <th style={{ padding: '12px 14px', width: '140px' }}>Status</th>
-                <th style={{ padding: '12px 14px', width: '40px' }}></th>
+                <th className="py-3 px-4 w-36">Recommendation</th>
+                <th className="py-3 px-4 w-8"></th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-slate-800/50">
               {sortedCandidates.map((c, index) => {
                 const rank = index + 1;
                 const scoreColor = getScoreColor(c.final_score);
@@ -214,69 +214,53 @@ export default function CandidateLeaderboard({ selectedJobId, refreshTrigger }) 
                   <tr
                     key={c.id}
                     onClick={() => setInspectCandidateId(c.id)}
-                    style={{
-                      borderBottom: '1px solid rgba(255, 255, 255, 0.04)',
-                      cursor: 'pointer',
-                      transition: 'background 0.15s ease'
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(99, 102, 241, 0.08)'}
-                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                    className="hover:bg-slate-800/40 cursor-pointer transition-colors"
                   >
                     {/* Rank */}
-                    <td style={{ padding: '14px', textAlign: 'center', fontWeight: 700, color: 'var(--text-muted)' }}>
-                      <div style={{
-                        width: '28px',
-                        height: '28px',
-                        borderRadius: '50%',
-                        background: rank === 1 ? 'linear-gradient(135deg, #f59e0b, #d97706)' :
-                                    rank === 2 ? 'linear-gradient(135deg, #94a3b8, #64748b)' :
-                                    rank === 3 ? 'linear-gradient(135deg, #b45309, #78350f)' : 'rgba(255, 255, 255, 0.06)',
-                        color: '#fff',
-                        fontSize: '0.8rem',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        margin: '0 auto'
-                      }}>
+                    <td className="py-3 px-4 text-center font-bold">
+                      <div className={`w-7 h-7 rounded-full flex items-center justify-center mx-auto text-xs ${
+                        rank === 1 ? 'bg-amber-500 text-slate-950 font-extrabold shadow-md shadow-amber-500/20' :
+                        rank === 2 ? 'bg-slate-300 text-slate-950 font-extrabold' :
+                        rank === 3 ? 'bg-amber-700 text-white font-extrabold' : 'bg-slate-800 text-slate-400'
+                      }`}>
                         {rank}
                       </div>
                     </td>
 
                     {/* Candidate Name & File */}
-                    <td style={{ padding: '14px' }}>
-                      <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>
-                        {c.candidate_name || 'Unnamed Candidate'}
-                      </div>
-                      <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                        {c.resume_filename}
-                      </div>
+                    <td className="py-3 px-4">
+                      <div className="font-bold text-slate-100">{c.candidate_name || 'Unnamed Candidate'}</div>
+                      <div className="text-[11px] text-slate-400">{c.resume_filename}</div>
                     </td>
 
-                    {/* Score Bar & % */}
-                    <td style={{ padding: '14px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <span style={{ fontWeight: 800, color: scoreColor, width: '42px', fontSize: '1rem' }}>
+                    {/* Score Bar */}
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-2">
+                        <span className="font-extrabold text-sm w-10 text-right" style={{ color: scoreColor }}>
                           {Math.round(c.final_score)}%
                         </span>
-                        <div style={{ flex: 1, height: '8px', background: 'rgba(255,255,255,0.08)', borderRadius: '4px', overflow: 'hidden' }}>
-                          <div style={{ height: '100%', width: `${Math.round(c.final_score)}%`, background: scoreColor, borderRadius: '4px' }} />
+                        <div className="flex-1 h-2 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
+                          <div
+                            className="h-full rounded-full transition-all duration-300"
+                            style={{ width: `${Math.round(c.final_score)}%`, backgroundColor: scoreColor }}
+                          />
                         </div>
                       </div>
                     </td>
 
                     {/* Relevant Experience */}
-                    <td style={{ padding: '14px', fontWeight: 600, color: 'var(--text-main)' }}>
+                    <td className="py-3 px-4 font-semibold text-slate-200">
                       {formatYears(c.relevant_experience_months ?? c.total_experience_months)}
                     </td>
 
-                    {/* Status Recommendation Pill */}
-                    <td style={{ padding: '14px' }}>
-                      {getRecommendationBadge(c.recommendation)}
+                    {/* Badge */}
+                    <td className="py-3 px-4">
+                      {renderBadge(c.recommendation)}
                     </td>
 
-                    {/* Action */}
-                    <td style={{ padding: '14px', textAlign: 'right' }}>
-                      <ChevronRight size={18} color="var(--text-dim)" />
+                    {/* Arrow */}
+                    <td className="py-3 px-4 text-right">
+                      <ChevronRight className="w-4 h-4 text-slate-500" />
                     </td>
                   </tr>
                 );
@@ -286,7 +270,7 @@ export default function CandidateLeaderboard({ selectedJobId, refreshTrigger }) 
         </div>
       )}
 
-      {/* Candidate Detail Inspection Modal */}
+      {/* Candidate Inspection Drawer Modal */}
       {inspectCandidateId && (
         <CandidateDetailModal
           candidateId={inspectCandidateId}
