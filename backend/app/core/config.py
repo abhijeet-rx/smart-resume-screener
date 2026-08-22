@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     debug: bool = True
 
     # ── Database ─────────────────────────────────────────
-    database_url: str = "postgresql://postgres:postgres@localhost:5432/smart_resume_screener"
+    database_url: str = "sqlite:///./smart_resume_screener.db"
 
     # ── LLM ──────────────────────────────────────────────
     llm_provider: str = "openai"  # "openai" | "gemini"
@@ -31,7 +31,7 @@ class Settings(BaseSettings):
     gemini_model: str = "gemini-1.5-flash"
 
     # ── CORS ─────────────────────────────────────────────
-    cors_origins: str = "http://localhost:5173,http://localhost:3000"
+    cors_origins: str = "http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173,http://127.0.0.1:3000"
 
     @property
     def cors_origin_list(self) -> list[str]:
