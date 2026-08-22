@@ -1,11 +1,10 @@
 """
-LLM service — structured extraction and screening via LLM.
+LLM service — structured extraction and reasoning via LLM.
 
 Provides:
-  - extract_resume_profile()  (Task 2) — resume → ResumeProfile
-  - extract_job_profile()     (Task 3) — JD → JobProfile
-  - generate_match_reasoning() (Task 5) — evidence → explanation
-  - screen_resume()           (legacy) — combined resume+JD screening
+  - extract_resume_profile()   — resume text → ResumeProfile
+  - extract_job_profile()      — JD text → JobProfile
+  - generate_match_reasoning() — deterministic evidence → semantic score + explanation
 """
 
 import json
@@ -19,32 +18,10 @@ from app.schemas.match import MatchResult, MatchReasoning
 
 logger = logging.getLogger(__name__)
 
-# Load prompt template at module level
 _PROMPT_DIR = Path(__file__).resolve().parent.parent.parent.parent / "prompts"
 
 
 # ── Prompt loaders ───────────────────────────────────────
-
-def _load_prompt() -> str:
-    """Load the screening prompt (resume + JD comparison)."""
-    prompt_path = _PROMPT_DIR / "screen_resume.txt"
-    if prompt_path.exists():
-        return prompt_path.read_text(encoding="utf-8")
-    # Fallback inline prompt
-    return (
-        "You are an expert technical recruiter. "
-        "Analyze the following resume against the job description. "
-        "Return ONLY valid JSON matching this schema:\n"
-        "{\n"
-        '  "candidate": {"name": str, "email": str, "phone": str},\n'
-        '  "match_score": int (0-100),\n'
-        '  "skills_match": {"matched": [str], "missing": [str], "bonus": [str]},\n'
-        '  "experience_summary": str,\n'
-        '  "education_match": bool,\n'
-        '  "recommendation": "STRONG_MATCH" | "GOOD_MATCH" | "PARTIAL_MATCH" | "NO_MATCH",\n'
-        '  "detailed_analysis": str\n'
-        "}"
-    )
 
 
 def _load_resume_prompt() -> str:
@@ -80,20 +57,6 @@ def _load_reasoning_prompt() -> str:
     )
 
 
-async def screen_resume(resume_text: str, jd_text: str) -> dict:
-    """Call the configured LLM provider and return structured screening JSON."""
-    system_prompt = _load_prompt()
-    user_message = (
-        f"=== RESUME ===\n{resume_text}\n\n"
-        f"=== JOB DESCRIPTION ===\n{jd_text}"
-    )
-
-    if settings.llm_provider == "openai":
-        return await _call_openai(system_prompt, user_message)
-    elif settings.llm_provider == "gemini":
-        return await _call_gemini(system_prompt, user_message)
-    else:
-        raise ValueError(f"Unknown LLM provider: {settings.llm_provider}")
 
 
 async def _call_openai(system_prompt: str, user_message: str) -> dict:
