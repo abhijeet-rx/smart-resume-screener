@@ -29,6 +29,7 @@ class MatchResult(BaseModel):
     education_score: float = 0.0    # 0-100
     final_score: float = 0.0       # 0-100 weighted
     skill_details: SkillMatchResult = Field(default_factory=SkillMatchResult)
+    relevant_experience_months: Optional[int] = None
     total_experience_months: Optional[int] = None
     strengths: list[str] = Field(default_factory=list)
     gaps: list[str] = Field(default_factory=list)

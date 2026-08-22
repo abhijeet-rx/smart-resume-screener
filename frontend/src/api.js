@@ -67,8 +67,8 @@ export const api = {
 
   createJob: async ({ jdText, jdFile }) => {
     const formData = new FormData();
-    if (jdText && jdText.strip ? jdText.strip() : jdText) {
-      formData.append('jd_text', jdText);
+    if (jdText?.trim()) {
+      formData.append('jd_text', jdText.trim());
     }
     if (jdFile) {
       formData.append('jd_file', jdFile);

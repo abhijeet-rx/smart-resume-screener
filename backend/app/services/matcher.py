@@ -467,7 +467,8 @@ def compute_match(
         education_score=edu_score,
         final_score=round(final, 1),
         skill_details=skill_result,
-        total_experience_months=relevant_months,
+        relevant_experience_months=relevant_months,
+        total_experience_months=total_months,
         strengths=strengths,
         gaps=gaps,
     )

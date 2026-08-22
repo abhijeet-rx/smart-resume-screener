@@ -77,8 +77,8 @@ export default function CandidateDetailModal({ candidateId, onClose }) {
 
   // Helper to extract total vs relevant experience years
   const getExperienceDisplay = (matchDetails, profile) => {
-    const relMonths = matchDetails?.total_experience_months || 0;
-    let totMonths = relMonths;
+    const relMonths = matchDetails?.relevant_experience_months ?? matchDetails?.total_experience_months ?? 0;
+    let totMonths = matchDetails?.total_experience_months ?? 0;
     if (profile && profile.experience) {
       const sum = profile.experience.reduce((acc, exp) => acc + (exp.duration_months || 0), 0);
       if (sum > totMonths) totMonths = sum;

@@ -311,6 +311,7 @@ async def list_candidates(
                 "experience_score": r.experience_score,
                 "education_score": r.education_score,
                 "recommendation": r.recommendation,
+                "relevant_experience_months": r.match_details_json.get("relevant_experience_months", r.match_details_json.get("total_experience_months", 0)) if r.match_details_json else 0,
                 "total_experience_months": r.match_details_json.get("total_experience_months", 0) if r.match_details_json else 0,
                 "created_at": r.created_at.isoformat(),
             }

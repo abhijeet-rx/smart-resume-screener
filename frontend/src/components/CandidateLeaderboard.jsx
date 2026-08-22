@@ -71,8 +71,8 @@ export default function CandidateLeaderboard({ selectedJobId, refreshTrigger }) 
       valA = a.final_score || 0;
       valB = b.final_score || 0;
     } else if (sortBy === 'experience') {
-      valA = a.total_experience_months || 0;
-      valB = b.total_experience_months || 0;
+      valA = a.relevant_experience_months ?? a.total_experience_months ?? 0;
+      valB = b.relevant_experience_months ?? b.total_experience_months ?? 0;
     } else if (sortBy === 'name') {
       valA = (a.candidate_name || '').toLowerCase();
       valB = (b.candidate_name || '').toLowerCase();
@@ -275,7 +275,7 @@ export default function CandidateLeaderboard({ selectedJobId, refreshTrigger }) 
 
                     {/* Relevant Experience */}
                     <td style={{ padding: '14px', fontWeight: 600, color: 'var(--text-main)' }}>
-                      {formatYears(c.total_experience_months)}
+                      {formatYears(c.relevant_experience_months ?? c.total_experience_months)}
                     </td>
 
                     {/* Status Recommendation Pill */}
