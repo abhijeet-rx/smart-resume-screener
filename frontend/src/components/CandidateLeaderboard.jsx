@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Trophy, CheckCircle2, Sparkles, AlertCircle, XCircle, ChevronRight, Search, UserCheck, Loader2, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { api } from '../api';
+import { getScoreColor, formatYears } from '../utils';
 import CandidateDetailModal from './CandidateDetailModal';
 
 export default function CandidateLeaderboard({ selectedJobId, refreshTrigger }) {
@@ -96,17 +97,7 @@ export default function CandidateLeaderboard({ selectedJobId, refreshTrigger }) 
     }
   };
 
-  const getScoreColor = (score) => {
-    if (score >= 80) return '#34d399';
-    if (score >= 60) return '#38bdf8';
-    if (score >= 40) return '#fbbf24';
-    return '#f87171';
-  };
 
-  const formatYears = (months) => {
-    if (!months) return '0.0 yrs';
-    return (months / 12).toFixed(1) + ' yrs';
-  };
 
   return (
     <div className="glass-panel" style={{ padding: '24px' }}>

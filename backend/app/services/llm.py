@@ -9,10 +9,12 @@ Provides:
 
 import json
 import logging
+import re
+from functools import lru_cache
 from pathlib import Path
 
 from app.core.config import settings
-from app.schemas.resume import ResumeProfile
+from app.schemas.resume import ResumeProfile, Education, Experience
 from app.schemas.job import JobProfile
 from app.schemas.match import MatchResult, MatchReasoning
 
@@ -20,10 +22,10 @@ logger = logging.getLogger(__name__)
 
 _PROMPT_DIR = Path(__file__).resolve().parent.parent.parent.parent / "prompts"
 
+# ── Prompt loaders (cached — read once from disk) ────────
 
-# ── Prompt loaders ───────────────────────────────────────
 
-
+@lru_cache(maxsize=1)
 def _load_resume_prompt() -> str:
     """Load the resume-only extraction prompt (no JD comparison)."""
     prompt_path = _PROMPT_DIR / "resume_extraction.txt"
@@ -35,6 +37,7 @@ def _load_resume_prompt() -> str:
     )
 
 
+@lru_cache(maxsize=1)
 def _load_jd_prompt() -> str:
     """Load the JD-only extraction prompt."""
     prompt_path = _PROMPT_DIR / "jd_extraction.txt"
@@ -46,6 +49,7 @@ def _load_jd_prompt() -> str:
     )
 
 
+@lru_cache(maxsize=1)
 def _load_reasoning_prompt() -> str:
     """Load the candidate reasoning / semantic scoring prompt."""
     prompt_path = _PROMPT_DIR / "candidate_reasoning.txt"
@@ -57,12 +61,42 @@ def _load_reasoning_prompt() -> str:
     )
 
 
+# ── Singleton LLM clients ──────────────────────────────
+
+_openai_client = None
+_gemini_configured = False
+
+LLM_TIMEOUT_SECONDS = 60
+
+
+def _get_openai_client():
+    """Return a reusable AsyncOpenAI client (created once per process)."""
+    global _openai_client
+    if _openai_client is None:
+        from openai import AsyncOpenAI
+
+        _openai_client = AsyncOpenAI(
+            api_key=settings.openai_api_key,
+            timeout=LLM_TIMEOUT_SECONDS,
+        )
+    return _openai_client
+
+
+def _ensure_gemini_configured():
+    """Configure the Gemini SDK once per process."""
+    global _gemini_configured
+    if not _gemini_configured:
+        import google.generativeai as genai
+
+        genai.configure(api_key=settings.gemini_api_key)
+        _gemini_configured = True
+
+
+# ── LLM API callers ─────────────────────────────────────
 
 
 async def _call_openai(system_prompt: str, user_message: str) -> dict:
-    from openai import AsyncOpenAI
-
-    client = AsyncOpenAI(api_key=settings.openai_api_key)
+    client = _get_openai_client()
     response = await client.chat.completions.create(
         model=settings.openai_model,
         response_format={"type": "json_object"},
@@ -79,8 +113,8 @@ async def _call_openai(system_prompt: str, user_message: str) -> dict:
 async def _call_gemini(system_prompt: str, user_message: str) -> dict:
     import google.generativeai as genai
 
-    genai.configure(api_key=settings.gemini_api_key)
-    
+    _ensure_gemini_configured()
+
     models_to_try = [settings.gemini_model, "gemini-2.0-flash", "gemini-1.5-flash-latest", "gemini-1.5-pro", "gemini-pro"]
     models_to_try = list(dict.fromkeys([m for m in models_to_try if m]))
 
@@ -97,6 +131,7 @@ async def _call_gemini(system_prompt: str, user_message: str) -> dict:
                     response_mime_type="application/json",
                     temperature=0.2,
                 ),
+                request_options={"timeout": LLM_TIMEOUT_SECONDS},
             )
             return json.loads(response.text)
         except Exception as e:
@@ -108,6 +143,16 @@ async def _call_gemini(system_prompt: str, user_message: str) -> dict:
 
     if last_exc:
         raise last_exc
+
+
+async def _call_llm(system_prompt: str, user_message: str) -> dict:
+    """Route to the configured LLM provider."""
+    if settings.llm_provider == "openai":
+        return await _call_openai(system_prompt, user_message)
+    elif settings.llm_provider == "gemini":
+        return await _call_gemini(system_prompt, user_message)
+    else:
+        raise ValueError(f"Unknown LLM provider: {settings.llm_provider}")
 
 
 # ── Task 2: Standalone resume extraction ─────────────────
@@ -130,13 +175,7 @@ async def extract_resume_profile(resume_text: str) -> ResumeProfile:
     user_message = f"=== RESUME ===\n{resume_text}"
 
     try:
-        if settings.llm_provider == "openai":
-            raw = await _call_openai(system_prompt, user_message)
-        elif settings.llm_provider == "gemini":
-            raw = await _call_gemini(system_prompt, user_message)
-        else:
-            raise ValueError(f"Unknown LLM provider: {settings.llm_provider}")
-
+        raw = await _call_llm(system_prompt, user_message)
         logger.debug("LLM resume extraction raw output: %s", raw)
         return ResumeProfile.model_validate(raw)
     except Exception as e:
@@ -162,13 +201,7 @@ async def extract_job_profile(jd_text: str) -> JobProfile:
     user_message = f"=== JOB DESCRIPTION ===\n{jd_text}"
 
     try:
-        if settings.llm_provider == "openai":
-            raw = await _call_openai(system_prompt, user_message)
-        elif settings.llm_provider == "gemini":
-            raw = await _call_gemini(system_prompt, user_message)
-        else:
-            raise ValueError(f"Unknown LLM provider: {settings.llm_provider}")
-
+        raw = await _call_llm(system_prompt, user_message)
         logger.debug("LLM JD extraction raw output: %s", raw)
         return JobProfile.model_validate(raw)
     except Exception as e:
@@ -229,13 +262,7 @@ async def generate_match_reasoning(
     )
 
     try:
-        if settings.llm_provider == "openai":
-            raw = await _call_openai(system_prompt, evidence)
-        elif settings.llm_provider == "gemini":
-            raw = await _call_gemini(system_prompt, evidence)
-        else:
-            raise ValueError(f"Unknown LLM provider: {settings.llm_provider}")
-
+        raw = await _call_llm(system_prompt, evidence)
         logger.debug("LLM reasoning raw output: %s", raw)
 
         semantic_score = float(raw.get("semantic_score", 0))
@@ -260,19 +287,17 @@ async def generate_match_reasoning(
 
 # ── Rule-based Fallback Parsers ─────────────────────────
 
-import re
-from app.schemas.resume import Education, Experience
 
 def _fallback_extract_job_profile(jd_text: str) -> JobProfile:
     lines = [l.strip() for l in jd_text.splitlines() if l.strip()]
     title = lines[0].replace("Job Title:", "").strip() if lines else "Software Engineer"
-    
+
     known_skills = ["Python", "FastAPI", "PostgreSQL", "Docker", "AWS", "Redis", "React", "JavaScript", "HTML", "CSS", "SQL", "Git"]
     req_skills = [s for s in known_skills if re.search(r'\b' + re.escape(s) + r'\b', jd_text, re.I)]
-    
+
     exp_match = re.search(r'(\d+)\+?\s*years?', jd_text, re.I)
     exp_req = int(exp_match.group(1)) if exp_match else 2
-    
+
     edu_match = re.search(r"(Bachelor's|Master's|B\.Tech|B\.S|M\.S|Diploma|Ph\.D)[^.\n]*", jd_text, re.I)
     edu_req = edu_match.group(0).strip() if edu_match else "Bachelor's degree in Computer Science"
 
@@ -285,13 +310,14 @@ def _fallback_extract_job_profile(jd_text: str) -> JobProfile:
         responsibilities=lines[1:4] if len(lines) > 1 else ["Build backend services"],
     )
 
+
 def _fallback_extract_resume_profile(resume_text: str) -> ResumeProfile:
     lines = [l.strip() for l in resume_text.splitlines() if l.strip()]
     name = lines[0].split("—")[0].split("-")[0].strip() if lines else "Candidate"
-    
+
     email_match = re.search(r'[\w\.-]+@[\w\.-]+\.\w+', resume_text)
     email = email_match.group(0) if email_match else None
-    
+
     phone_match = re.search(r'\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}', resume_text)
     phone = phone_match.group(0) if phone_match else None
 

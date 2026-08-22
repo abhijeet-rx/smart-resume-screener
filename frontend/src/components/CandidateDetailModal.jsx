@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, Award, CheckCircle2, XCircle, FileText, Mail, Phone, Sparkles, Brain, Check, AlertCircle, Loader2, Briefcase, GraduationCap } from 'lucide-react';
 import { api } from '../api';
+import { getScoreColor } from '../utils';
 
 export default function CandidateDetailModal({ candidateId, onClose }) {
   const [detail, setDetail] = useState(null);
@@ -41,12 +42,7 @@ export default function CandidateDetailModal({ candidateId, onClose }) {
     }
   };
 
-  const getScoreColor = (score) => {
-    if (score >= 80) return '#34d399';
-    if (score >= 60) return '#38bdf8';
-    if (score >= 40) return '#fbbf24';
-    return '#f87171';
-  };
+
 
   const renderProgressBar = (score) => {
     const percent = Math.round(score || 0);

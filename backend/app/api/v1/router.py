@@ -5,6 +5,7 @@ Endpoints:
   POST   /jobs                    Create a job from JD text
   GET    /jobs                    List all jobs (paginated)
   GET    /jobs/{id}               Get job details
+  DELETE /jobs/{id}               Delete a job and its candidates
   POST   /jobs/{id}/screen        Upload resume(s) and screen against a job
   GET    /jobs/{id}/candidates    Ranked candidate list for a job (paginated)
   GET    /candidates/{id}         Full candidate screening detail
@@ -16,6 +17,7 @@ from pathlib import Path
 from uuid import UUID, uuid4
 
 from fastapi import APIRouter, UploadFile, File, Form, Query, Depends, HTTPException, Request
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -33,6 +35,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1", tags=["screening"])
 
 ALLOWED_EXTENSIONS = {".pdf", ".docx", ".txt"}
+MAX_JD_TEXT_LENGTH = 50_000  # characters
 
 
 async def save_validated_upload(file: UploadFile) -> Path:
@@ -111,6 +114,13 @@ async def create_job(
     if not text.strip():
         raise HTTPException(400, "Please provide job description text or upload a file.")
 
+    if len(text) > MAX_JD_TEXT_LENGTH:
+        raise HTTPException(
+            400,
+            f"Job description text exceeds {MAX_JD_TEXT_LENGTH:,} character limit "
+            f"({len(text):,} chars received).",
+        )
+
     try:
         profile = await extract_job_profile(text)
     except Exception as e:
@@ -140,15 +150,28 @@ async def list_jobs(
     limit: int = Query(20, ge=1, le=100, description="Max records to return"),
     db: Session = Depends(get_db),
 ):
-    """List all jobs (paginated)."""
+    """List all jobs (paginated). Uses a subquery to avoid N+1 candidate counts."""
     total = db.query(Job).count()
+
+    # Subquery for candidate counts — single SQL query instead of N+1
+    candidate_counts = (
+        db.query(
+            MatchResultDB.job_id,
+            func.count(MatchResultDB.id).label("cnt"),
+        )
+        .group_by(MatchResultDB.job_id)
+        .subquery()
+    )
+
     rows = (
-        db.query(Job)
+        db.query(Job, candidate_counts.c.cnt)
+        .outerjoin(candidate_counts, Job.id == candidate_counts.c.job_id)
         .order_by(Job.created_at.desc())
         .offset(skip)
         .limit(limit)
         .all()
     )
+
     return {
         "total": total,
         "skip": skip,
@@ -158,11 +181,9 @@ async def list_jobs(
                 "id": str(j.id),
                 "title": j.title,
                 "created_at": j.created_at.isoformat(),
-                "candidate_count": db.query(MatchResultDB).filter(
-                    MatchResultDB.job_id == j.id
-                ).count(),
+                "candidate_count": cnt or 0,
             }
-            for j in rows
+            for j, cnt in rows
         ],
     }
 
@@ -176,10 +197,23 @@ async def get_job(job_id: UUID, db: Session = Depends(get_db)):
     return {
         "id": str(job.id),
         "title": job.title,
-        "description_text": job.description_text,
+        "description_text": job.description_text[:2000] if job.description_text else "",
         "profile": job.profile_json,
         "created_at": job.created_at.isoformat(),
     }
+
+
+@router.delete("/jobs/{job_id}", dependencies=[Depends(verify_api_key)])
+async def delete_job(job_id: UUID, db: Session = Depends(get_db)):
+    """Delete a job and all its associated screening results (cascade)."""
+    job = db.query(Job).filter(Job.id == job_id).first()
+    if not job:
+        raise HTTPException(404, "Job not found.")
+
+    db.delete(job)  # cascade="all, delete-orphan" handles match_results
+    db.commit()
+
+    return {"deleted": True, "id": str(job_id)}
 
 
 # ── Screening ───────────────────────────────────────────

@@ -3,14 +3,14 @@ Screening orchestrator — ties the full pipeline together.
 
 Pipeline:
   1. Parse files → raw text
-  2. Extract ResumeProfile (LLM)
-  3. Extract JobProfile (LLM)
-  4. Compute deterministic match scores
-  5. Generate LLM reasoning + semantic score
-  6. Recompute final score with semantic score
-  7. Return ScreeningOutput
+  2. Extract ResumeProfile + JobProfile (LLM, parallel)
+  3. Compute deterministic match scores
+  4. Generate LLM reasoning + semantic score
+  5. Recompute final score with semantic score
+  6. Return ScreeningOutput
 """
 
+import asyncio
 import logging
 
 from app.schemas.resume import ResumeProfile
@@ -47,12 +47,12 @@ async def screen_candidate(
     if not jd_text or not jd_text.strip():
         raise ValueError("Job description text is empty.")
 
-    # ── Step 1: Structured extraction (parallel-safe) ────
-    logger.info("Extracting resume profile...")
-    resume_profile = await extract_resume_profile(resume_text)
-
-    logger.info("Extracting job profile...")
-    job_profile = await extract_job_profile(jd_text)
+    # ── Step 1: Structured extraction (parallel — halves LLM latency) ──
+    logger.info("Extracting resume + job profiles in parallel...")
+    resume_profile, job_profile = await asyncio.gather(
+        extract_resume_profile(resume_text),
+        extract_job_profile(jd_text),
+    )
 
     # ── Step 2: Deterministic scoring (no LLM) ──────────
     logger.info("Computing deterministic match scores...")

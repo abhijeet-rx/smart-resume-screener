@@ -6,15 +6,15 @@ import uuid
 from datetime import datetime, timezone
 
 from sqlalchemy import Column, String, Text, DateTime, JSON
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 
-from app.core.database import Base
+from app.core.database import Base, PortableUUID
 
 
 class Job(Base):
     __tablename__ = "jobs"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(PortableUUID(), primary_key=True, default=uuid.uuid4)
     title = Column(String(255), nullable=True)
     description_text = Column(Text, nullable=False)
     profile_json = Column(JSON, nullable=True)  # Stored JobProfile
@@ -24,5 +24,14 @@ class Job(Base):
         nullable=False,
     )
 
+    # Relationships
+    match_results = relationship(
+        "MatchResultDB",
+        back_populates="job",
+        cascade="all, delete-orphan",
+        lazy="dynamic",
+    )
+
     def __repr__(self) -> str:
         return f"<Job {self.id} – {self.title}>"
+

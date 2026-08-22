@@ -5,17 +5,17 @@ SQLAlchemy model for screening match results.
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import Column, String, Float, Integer, Text, DateTime, JSON, ForeignKey
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Column, String, Float, Text, DateTime, JSON, ForeignKey
+from sqlalchemy.orm import relationship
 
-from app.core.database import Base
+from app.core.database import Base, PortableUUID
 
 
 class MatchResultDB(Base):
     __tablename__ = "match_results"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    job_id = Column(UUID(as_uuid=True), ForeignKey("jobs.id"), nullable=False)
+    id = Column(PortableUUID(), primary_key=True, default=uuid.uuid4)
+    job_id = Column(PortableUUID(), ForeignKey("jobs.id"), nullable=False, index=True)
 
     # Candidate info (denormalized for simplicity)
     candidate_name = Column(String(255), nullable=True)
@@ -44,5 +44,9 @@ class MatchResultDB(Base):
         nullable=False,
     )
 
+    # Relationships
+    job = relationship("Job", back_populates="match_results")
+
     def __repr__(self) -> str:
         return f"<MatchResult {self.id} – {self.candidate_name} ({self.final_score})>"
+
