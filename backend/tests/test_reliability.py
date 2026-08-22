@@ -242,6 +242,66 @@ class TestParserEdgeCases:
         assert text == ""
 
 
+class TestUploadValidation:
+    """Test save_validated_upload helper for file type, size, and empty file validation."""
+
+    @pytest.mark.anyio
+    async def test_unsupported_file_extension(self):
+        from fastapi import UploadFile, HTTPException
+        from app.api.v1.router import save_validated_upload
+        import io
+
+        fake_file = UploadFile(filename="resume.png", file=io.BytesIO(b"png data"))
+        with pytest.raises(HTTPException) as exc_info:
+            await save_validated_upload(fake_file)
+        assert exc_info.value.status_code == 400
+        assert "Unsupported file type" in exc_info.value.detail
+
+    @pytest.mark.anyio
+    async def test_empty_file_upload(self):
+        from fastapi import UploadFile, HTTPException
+        from app.api.v1.router import save_validated_upload
+        import io
+
+        fake_file = UploadFile(filename="empty.pdf", file=io.BytesIO(b""))
+        with pytest.raises(HTTPException) as exc_info:
+            await save_validated_upload(fake_file)
+        assert exc_info.value.status_code == 400
+        assert "empty" in exc_info.value.detail
+
+    @pytest.mark.anyio
+    async def test_oversized_file_upload(self, monkeypatch):
+        from fastapi import UploadFile, HTTPException
+        from app.api.v1.router import save_validated_upload
+        from app.core import config
+        import io
+
+        monkeypatch.setattr(config.settings, "max_upload_size_mb", 0.0001)
+
+        fake_file = UploadFile(filename="large.txt", file=io.BytesIO(b"A" * 500))
+        with pytest.raises(HTTPException) as exc_info:
+            await save_validated_upload(fake_file)
+        assert exc_info.value.status_code == 413
+        assert "exceeds maximum allowed size" in exc_info.value.detail
+
+    @pytest.mark.anyio
+    async def test_valid_upload_saves_sanitized_uuid_file(self, tmp_path, monkeypatch):
+        from fastapi import UploadFile
+        from app.api.v1.router import save_validated_upload
+        from app.core import config
+        import io
+
+        monkeypatch.setattr(config.settings, "upload_dir", str(tmp_path))
+
+        fake_file = UploadFile(filename="My Resume (2026).pdf", file=io.BytesIO(b"PDF header content"))
+        saved_path = await save_validated_upload(fake_file)
+
+        assert saved_path.exists()
+        assert saved_path.suffix == ".pdf"
+        assert saved_path.name != "My Resume (2026).pdf"
+        assert len(saved_path.name) > 30
+
+
 # ═══════════════════════════════════════════════════════════
 # MOCK LLM RESPONSES
 # ═══════════════════════════════════════════════════════════

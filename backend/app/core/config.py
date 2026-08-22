@@ -27,6 +27,8 @@ class Settings(BaseSettings):
     llm_provider: str = "openai"  # "openai" | "gemini"
     openai_api_key: str = ""
     gemini_api_key: str = ""
+    openai_model: str = "gpt-4o"
+    gemini_model: str = "gemini-1.5-flash"
 
     # ── CORS ─────────────────────────────────────────────
     cors_origins: str = "http://localhost:5173,http://localhost:3000"

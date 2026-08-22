@@ -12,7 +12,8 @@ Endpoints:
 """
 
 import logging
-from uuid import UUID
+from pathlib import Path
+from uuid import UUID, uuid4
 
 from fastapi import APIRouter, UploadFile, File, Form, Query, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
@@ -30,6 +31,50 @@ from app.services.screener import screen_candidate
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1", tags=["screening"])
+
+ALLOWED_EXTENSIONS = {".pdf", ".docx", ".txt"}
+
+
+async def save_validated_upload(file: UploadFile) -> Path:
+    """Validate file extension and size before saving with a sanitized UUID filename.
+
+    Raises:
+        HTTPException(400): If filename is missing, file is empty, or extension is unsupported.
+        HTTPException(413): If file size exceeds settings.max_upload_size_mb.
+    """
+    if not file.filename:
+        raise HTTPException(400, "Uploaded file must have a filename.")
+
+    ext = Path(file.filename).suffix.lower()
+    if ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(
+            400,
+            f"Unsupported file type '{ext}'. Allowed extensions: {', '.join(sorted(ALLOWED_EXTENSIONS))}"
+        )
+
+    max_bytes = settings.max_upload_size_mb * 1024 * 1024
+    content = bytearray()
+    chunk_size = 1024 * 1024  # Read in 1MB chunks to prevent memory bloat
+
+    while True:
+        chunk = await file.read(chunk_size)
+        if not chunk:
+            break
+        content.extend(chunk)
+        if len(content) > max_bytes:
+            raise HTTPException(
+                413,
+                f"File '{file.filename}' exceeds maximum allowed size of {settings.max_upload_size_mb} MB."
+            )
+
+    if len(content) == 0:
+        raise HTTPException(400, f"File '{file.filename}' is empty.")
+
+    # Sanitized filename using UUID to prevent path traversal & name collisions
+    safe_filename = f"{uuid4().hex}{ext}"
+    saved_path = settings.upload_path / safe_filename
+    saved_path.write_bytes(content)
+    return saved_path
 
 
 # ── Health ───────────────────────────────────────────────
@@ -57,10 +102,7 @@ async def create_job(
     if jd_text and jd_text.strip():
         text = jd_text.strip()
     elif jd_file:
-        upload_dir = settings.upload_path
-        file_path = upload_dir / jd_file.filename
-        file_bytes = await jd_file.read()
-        file_path.write_bytes(file_bytes)
+        file_path = await save_validated_upload(jd_file)
         try:
             text = extract_text(file_path)
         finally:
@@ -160,15 +202,20 @@ async def screen_resumes(
     errors = []
 
     for resume_file in resumes:
-        upload_dir = settings.upload_path
-        file_path = upload_dir / resume_file.filename
-        file_bytes = await resume_file.read()
-        file_path.write_bytes(file_bytes)
+        filename = resume_file.filename or "unknown"
+        try:
+            file_path = await save_validated_upload(resume_file)
+        except HTTPException as he:
+            errors.append({"file": filename, "error": he.detail})
+            continue
+        except Exception as e:
+            errors.append({"file": filename, "error": str(e)})
+            continue
 
         try:
             resume_text = extract_text(file_path)
             if not resume_text.strip():
-                errors.append({"file": resume_file.filename, "error": "Could not extract text"})
+                errors.append({"file": filename, "error": "Could not extract text"})
                 continue
 
             output: ScreeningOutput = await screen_candidate(resume_text, jd_text)
@@ -179,7 +226,7 @@ async def screen_resumes(
                 candidate_name=output.candidate_name,
                 candidate_email=output.candidate_email,
                 candidate_phone=output.candidate_phone,
-                resume_filename=resume_file.filename,
+                resume_filename=filename,
                 skill_score=output.match.skill_score,
                 semantic_score=output.match.semantic_score,
                 experience_score=output.match.experience_score,
@@ -199,12 +246,12 @@ async def screen_resumes(
                 "candidate_name": output.candidate_name,
                 "final_score": output.match.final_score,
                 "recommendation": output.reasoning.recommendation,
-                "resume_filename": resume_file.filename,
+                "resume_filename": filename,
             })
 
         except Exception as e:
-            logger.exception(f"Screening failed for {resume_file.filename}")
-            errors.append({"file": resume_file.filename, "error": str(e)})
+            logger.exception(f"Screening failed for {filename}")
+            errors.append({"file": filename, "error": str(e)})
         finally:
             file_path.unlink(missing_ok=True)
 

@@ -64,7 +64,7 @@ async def _call_openai(system_prompt: str, user_message: str) -> dict:
 
     client = AsyncOpenAI(api_key=settings.openai_api_key)
     response = await client.chat.completions.create(
-        model="gpt-4o",
+        model=settings.openai_model,
         response_format={"type": "json_object"},
         messages=[
             {"role": "system", "content": system_prompt},
@@ -81,7 +81,7 @@ async def _call_gemini(system_prompt: str, user_message: str) -> dict:
 
     genai.configure(api_key=settings.gemini_api_key)
     model = genai.GenerativeModel(
-        "gemini-1.5-flash",
+        settings.gemini_model,
         system_instruction=system_prompt,
     )
     response = model.generate_content(
