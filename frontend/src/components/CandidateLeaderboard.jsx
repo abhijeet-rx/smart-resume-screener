@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Trophy, CheckCircle2, Sparkles, AlertCircle, XCircle, ChevronRight, Search, UserCheck, Loader2, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { api } from '../api';
 import { getScoreColor, formatYears } from '../utils';
+import { NumberTicker } from '@/components/ui/number-ticker';
 import CandidateDetailModal from './CandidateDetailModal';
 
 export default function CandidateLeaderboard({ selectedJobId, refreshTrigger }) {
@@ -237,7 +238,7 @@ export default function CandidateLeaderboard({ selectedJobId, refreshTrigger }) 
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-2">
                         <span className="font-extrabold text-sm w-10 text-right" style={{ color: scoreColor }}>
-                          {Math.round(c.final_score)}%
+                          <NumberTicker value={Math.round(c.final_score)} />%
                         </span>
                         <div className="flex-1 h-2 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
                           <div

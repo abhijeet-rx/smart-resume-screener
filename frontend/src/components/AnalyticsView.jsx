@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Trophy, Users, CheckCircle2, AlertTriangle, Sparkles, TrendingUp, Award, Layers, Target, BarChart2 } from 'lucide-react';
 import { api } from '../api';
 import { getScoreColor } from '../utils';
+import { NumberTicker } from '@/components/ui/number-ticker';
 
 export default function AnalyticsView({ selectedJobId }) {
   const [candidates, setCandidates] = useState([]);
@@ -58,7 +59,7 @@ export default function AnalyticsView({ selectedJobId }) {
           <p className="text-xs text-slate-400 mt-0.5">High-level talent pool distribution, qualification rates, and scoring statistics.</p>
         </div>
         <div className="text-xs text-slate-400 bg-slate-900/80 px-3 py-1.5 rounded-lg border border-slate-800">
-          Total Candidates Evaluated: <span className="font-bold text-slate-200">{totalCandidates}</span>
+          Total Candidates Evaluated: <span className="font-bold text-slate-200"><NumberTicker value={totalCandidates} /></span>
         </div>
       </div>
 
@@ -70,7 +71,7 @@ export default function AnalyticsView({ selectedJobId }) {
             <TrendingUp className="w-4 h-4 text-emerald-400" />
           </div>
           <div className="text-3xl font-extrabold text-slate-100 mt-2" style={{ color: getScoreColor(avgScore) }}>
-            {avgScore}%
+            <NumberTicker value={avgScore} />%
           </div>
           <div className="text-[11px] text-slate-500 mt-1">Across all evaluated resumes</div>
         </div>
@@ -81,7 +82,7 @@ export default function AnalyticsView({ selectedJobId }) {
             <CheckCircle2 className="w-4 h-4 text-emerald-400" />
           </div>
           <div className="text-3xl font-extrabold text-emerald-400 mt-2">
-            {shortlistRate}%
+            <NumberTicker value={shortlistRate} />%
           </div>
           <div className="text-[11px] text-slate-500 mt-1">{shortlistCount} of {totalCandidates} candidates qualified</div>
         </div>
@@ -92,7 +93,7 @@ export default function AnalyticsView({ selectedJobId }) {
             <Sparkles className="w-4 h-4 text-cyan-400" />
           </div>
           <div className="text-3xl font-extrabold text-cyan-400 mt-2">
-            {goodMatchCount}
+            <NumberTicker value={goodMatchCount} />
           </div>
           <div className="text-[11px] text-slate-500 mt-1">Strong potential candidates</div>
         </div>
@@ -103,7 +104,7 @@ export default function AnalyticsView({ selectedJobId }) {
             <AlertTriangle className="w-4 h-4 text-amber-400" />
           </div>
           <div className="text-3xl font-extrabold text-amber-400 mt-2">
-            {reviewCount}
+            <NumberTicker value={reviewCount} />
           </div>
           <div className="text-[11px] text-slate-500 mt-1">Borderline fit candidates</div>
         </div>
