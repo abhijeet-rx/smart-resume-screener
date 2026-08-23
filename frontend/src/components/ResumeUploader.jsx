@@ -47,6 +47,7 @@ export default function ResumeUploader({ targetJobId, onScreeningComplete }) {
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files.length > 0) {
       validateAndAddFiles(e.target.files);
+      e.target.value = '';
     }
   };
 

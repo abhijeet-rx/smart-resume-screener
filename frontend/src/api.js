@@ -65,6 +65,8 @@ export const api = {
   
   getJob: (jobId) => request(`/jobs/${jobId}`),
 
+  deleteJob: (jobId) => request(`/jobs/${jobId}`, { method: 'DELETE' }),
+
   createJob: async ({ jdText, jdFile }) => {
     const formData = new FormData();
     if (jdText?.trim()) {

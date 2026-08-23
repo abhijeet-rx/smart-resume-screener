@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Briefcase, FileText, Upload, Users, Calendar, Check, Loader2, Sparkles, AlertCircle } from 'lucide-react';
+import { Plus, Briefcase, FileText, Upload, Users, Calendar, Check, Loader2, Sparkles, AlertCircle, Trash2, X } from 'lucide-react';
 import { api } from '../api';
 
 export default function JobManager({ selectedJobId, onSelectJob, onJobCreated }) {
@@ -10,9 +10,14 @@ export default function JobManager({ selectedJobId, onSelectJob, onJobCreated })
   // Form state
   const [createMode, setCreateMode] = useState('text');
   const [jdText, setJdText] = useState('');
-  const [jdFile, setJdFile] = useState(null);
+  const [jdFiles, setJdFiles] = useState([]);
   const [creating, setCreating] = useState(false);
+  const [creationProgress, setCreationProgress] = useState('');
   const [createError, setCreateError] = useState('');
+
+  // Delete state
+  const [confirmDeleteJobId, setConfirmDeleteJobId] = useState(null);
+  const [deletingJobId, setDeletingJobId] = useState(null);
 
   const fetchJobs = async () => {
     setLoading(true);
@@ -41,29 +46,72 @@ export default function JobManager({ selectedJobId, onSelectJob, onJobCreated })
       setCreateError('Please enter job description text.');
       return;
     }
-    if (createMode === 'file' && !jdFile) {
-      setCreateError('Please select a JD file (.pdf, .docx, .txt).');
+    if (createMode === 'file' && jdFiles.length === 0) {
+      setCreateError('Please select at least one JD file (.pdf, .docx, .txt).');
       return;
     }
 
     setCreating(true);
+    setCreationProgress('');
     try {
-      const newJob = await api.createJob({
-        jdText: createMode === 'text' ? jdText : null,
-        jdFile: createMode === 'file' ? jdFile : null,
-      });
-
-      setJdText('');
-      setJdFile(null);
-      setShowCreateModal(false);
-      await fetchJobs();
-      onSelectJob(newJob.id);
-      if (onJobCreated) onJobCreated(newJob);
+      if (createMode === 'text') {
+        const newJob = await api.createJob({ jdText: jdText.trim() });
+        setJdText('');
+        setShowCreateModal(false);
+        await fetchJobs();
+        onSelectJob(newJob.id);
+        if (onJobCreated) onJobCreated(newJob);
+      } else {
+        // Multi-file batch JD posting
+        let lastCreatedJob = null;
+        for (let i = 0; i < jdFiles.length; i++) {
+          setCreationProgress(`Extracting requirements ${i + 1} of ${jdFiles.length}: ${jdFiles[i].name}...`);
+          const newJob = await api.createJob({ jdFile: jdFiles[i] });
+          lastCreatedJob = newJob;
+        }
+        setJdFiles([]);
+        setShowCreateModal(false);
+        await fetchJobs();
+        if (lastCreatedJob) {
+          onSelectJob(lastCreatedJob.id);
+          if (onJobCreated) onJobCreated(lastCreatedJob);
+        }
+      }
     } catch (err) {
       setCreateError(err.message || 'Failed to extract job profile.');
     } finally {
       setCreating(false);
+      setCreationProgress('');
     }
+  };
+
+  const handleDeleteJob = async (jobId, e) => {
+    e.stopPropagation(); // prevent card selection
+    if (confirmDeleteJobId !== jobId) {
+      setConfirmDeleteJobId(jobId);
+      return;
+    }
+
+    setDeletingJobId(jobId);
+    try {
+      await api.deleteJob(jobId);
+      const updatedJobs = jobs.filter((j) => j.id !== jobId);
+      setJobs(updatedJobs);
+
+      if (selectedJobId === jobId) {
+        const nextJobId = updatedJobs.length > 0 ? updatedJobs[0].id : null;
+        onSelectJob(nextJobId);
+      }
+    } catch (err) {
+      alert(err.message || 'Failed to delete job role.');
+    } finally {
+      setDeletingJobId(null);
+      setConfirmDeleteJobId(null);
+    }
+  };
+
+  const removeJdFile = (index) => {
+    setJdFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
   return (
@@ -96,7 +144,7 @@ export default function JobManager({ selectedJobId, onSelectJob, onJobCreated })
           <Briefcase className="w-10 h-10 text-white/20 mx-auto mb-3" />
           <h3 className="text-sm font-manrope font-semibold text-white mb-1">No Jobs Posted Yet</h3>
           <p className="text-xs text-white/50 font-inter mb-4 max-w-sm mx-auto">
-            Paste a Job Description or upload a document to let our AI engine extract requirements and create a target role.
+            Paste a Job Description or upload documents to let our AI engine extract requirements and create target roles.
           </p>
           <button
             onClick={() => setShowCreateModal(true)}
@@ -109,26 +157,56 @@ export default function JobManager({ selectedJobId, onSelectJob, onJobCreated })
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {jobs.map((job) => {
             const isSelected = job.id === selectedJobId;
+            const isDeleting = deletingJobId === job.id;
+            const isConfirming = confirmDeleteJobId === job.id;
+
             return (
               <div
                 key={job.id}
                 onClick={() => onSelectJob(job.id)}
-                className={`p-5 rounded-2xl border transition-all duration-200 cursor-pointer relative backdrop-blur-md hover:scale-[1.01] ${
+                className={`p-5 rounded-2xl border transition-all duration-200 cursor-pointer relative backdrop-blur-md hover:scale-[1.01] group ${
                   isSelected
                     ? 'bg-[#2b2344]/70 border-[#7b39fc] ring-2 ring-[#7b39fc]/50 shadow-[0_4px_20px_rgba(123,57,252,0.2)]'
                     : 'bg-[#2b2344]/40 border-[rgba(164,132,215,0.25)] hover:border-[#7b39fc]/60'
                 }`}
               >
                 <div className="flex items-start justify-between gap-2 mb-2">
-                  <h3 className={`text-sm font-manrope font-bold truncate ${isSelected ? 'text-white' : 'text-white/90'}`}>
+                  <h3 className={`text-sm font-manrope font-bold truncate pr-6 ${isSelected ? 'text-white' : 'text-white/90'}`}>
                     {job.title || 'Untitled Role'}
                   </h3>
-                  {isSelected && (
-                    <span className="w-5 h-5 rounded-full bg-[#7b39fc] flex items-center justify-center shrink-0 shadow-[0_2px_8px_rgba(123,57,252,0.4)]">
-                      <Check className="w-3 h-3 text-white" />
-                    </span>
-                  )}
+                  
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {isSelected && (
+                      <span className="w-5 h-5 rounded-full bg-[#7b39fc] flex items-center justify-center shadow-[0_2px_8px_rgba(123,57,252,0.4)]">
+                        <Check className="w-3 h-3 text-white" />
+                      </span>
+                    )}
+
+                    {/* Delete Job Button */}
+                    <button
+                      onClick={(e) => handleDeleteJob(job.id, e)}
+                      disabled={isDeleting}
+                      title={isConfirming ? "Click again to confirm delete" : "Delete this job role"}
+                      className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                        isConfirming
+                          ? 'bg-[#f87171] text-white animate-pulse'
+                          : 'text-white/30 hover:text-[#f87171] hover:bg-white/10 opacity-0 group-hover:opacity-100'
+                      }`}
+                    >
+                      {isDeleting ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Trash2 className="w-3.5 h-3.5" />
+                      )}
+                    </button>
+                  </div>
                 </div>
+
+                {isConfirming && (
+                  <div className="text-[10px] text-[#f87171] font-inter mb-2 font-medium">
+                    ⚠️ Click delete icon again to permanently remove role & candidates.
+                  </div>
+                )}
 
                 <div className="flex items-center gap-4 text-xs text-white/50 font-inter">
                   <span className="flex items-center gap-1.5">
@@ -153,7 +231,7 @@ export default function JobManager({ selectedJobId, onSelectJob, onJobCreated })
                 <Sparkles className="w-4 h-4" />
               </div>
               <div>
-                <h3 className="text-sm font-manrope font-bold text-white">Post New Job Description</h3>
+                <h3 className="text-sm font-manrope font-bold text-white">Post New Job Description(s)</h3>
                 <p className="text-[11px] text-white/50 font-inter">Extracts skills, experience thresholds, and education requirements automatically.</p>
               </div>
             </div>
@@ -180,7 +258,7 @@ export default function JobManager({ selectedJobId, onSelectJob, onJobCreated })
                     : 'bg-[#0e091b] text-white/50 border-[rgba(164,132,215,0.2)] hover:text-white hover:bg-white/5'
                 }`}
               >
-                <Upload className="w-4 h-4" /> Upload File
+                <Upload className="w-4 h-4" /> Upload Files
               </button>
             </div>
 
@@ -197,17 +275,51 @@ export default function JobManager({ selectedJobId, onSelectJob, onJobCreated })
                   />
                 </div>
               ) : (
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-manrope font-medium text-white/50">Upload Document (.pdf, .docx, .txt)</label>
+                <div className="space-y-2">
+                  <label className="text-[11px] font-manrope font-medium text-white/50">
+                    Upload Documents (.pdf, .docx, .txt — multi-select supported)
+                  </label>
                   <input
                     type="file"
+                    multiple
                     accept=".pdf,.docx,.txt"
-                    onChange={(e) => setJdFile(e.target.files[0] || null)}
-                    className="w-full px-3 py-2 text-xs font-inter glass-input rounded-lg text-white/90"
+                    onChange={(e) => setJdFiles(Array.from(e.target.files || []))}
+                    className="w-full px-3 py-2 text-xs font-inter glass-input rounded-lg text-white/90 cursor-pointer"
                   />
-                  {jdFile && (
-                    <p className="text-[11px] text-[#34d399] font-inter">Selected: {jdFile.name} ({(jdFile.size / 1024).toFixed(1)} KB)</p>
+
+                  {/* List of selected JD files */}
+                  {jdFiles.length > 0 && (
+                    <div className="space-y-1.5 pt-1">
+                      <div className="text-[11px] text-white/60 font-inter font-semibold">
+                        Selected Files ({jdFiles.length}):
+                      </div>
+                      <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto">
+                        {jdFiles.map((file, idx) => (
+                          <div
+                            key={idx}
+                            className="flex items-center gap-1.5 bg-[#0e091b] border border-[rgba(164,132,215,0.2)] px-2.5 py-1 rounded-md text-[11px] font-inter text-white/80"
+                          >
+                            <FileText className="w-3 h-3 text-[#7b39fc]" />
+                            <span className="max-w-[150px] truncate">{file.name}</span>
+                            <button
+                              type="button"
+                              onClick={() => removeJdFile(idx)}
+                              className="text-white/40 hover:text-white ml-0.5 cursor-pointer"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   )}
+                </div>
+              )}
+
+              {creationProgress && (
+                <div className="flex items-center gap-2 p-3 bg-[#7b39fc]/10 border border-[#7b39fc]/30 text-[#7b39fc] rounded-xl text-xs font-inter">
+                  <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                  <span>{creationProgress}</span>
                 </div>
               )}
 
@@ -237,7 +349,7 @@ export default function JobManager({ selectedJobId, onSelectJob, onJobCreated })
                       <Loader2 className="w-4 h-4 animate-spin" /> Extracting Requirements...
                     </>
                   ) : (
-                    'Extract & Save Job'
+                    `Extract & Save Job${jdFiles.length > 1 ? `s (${jdFiles.length})` : ''}`
                   )}
                 </button>
               </div>
