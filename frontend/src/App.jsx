@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import LandingPage from './components/LandingPage';
 import Header from './components/Header';
 import JobManager from './components/JobManager';
 import ResumeUploader from './components/ResumeUploader';
@@ -6,6 +7,7 @@ import CandidateLeaderboard from './components/CandidateLeaderboard';
 import AnalyticsView from './components/AnalyticsView';
 
 function App() {
+  const [showHero, setShowHero] = useState(true);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [selectedJobId, setSelectedJobId] = useState(null);
   const [refreshCandidatesTrigger, setRefreshCandidatesTrigger] = useState(0);
@@ -18,6 +20,12 @@ function App() {
     setRefreshCandidatesTrigger((prev) => prev + 1);
   };
 
+  /* ── Hero Landing Page ── */
+  if (showHero) {
+    return <LandingPage onEnterApp={() => setShowHero(false)} />;
+  }
+
+  /* ── Dashboard App (existing, untouched) ── */
   return (
     <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100 font-sans selection:bg-indigo-500 selection:text-white">
       {/* Top Navigation Bar */}
@@ -87,3 +95,4 @@ function App() {
 }
 
 export default App;
+

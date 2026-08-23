@@ -1,10 +1,19 @@
 @import "tailwindcss";
 
-@layer base {
-  :root {
-    --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  }
+@theme {
+  --font-manrope: 'Manrope', system-ui, sans-serif;
+  --font-cabin: 'Cabin', system-ui, sans-serif;
+  --font-serif: 'Instrument Serif', 'Georgia', serif;
+  --font-inter: 'Inter', system-ui, sans-serif;
+  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
+  --color-primary: #7b39fc;
+  --color-primary-light: #9256ff;
+  --color-dark-purple: #2b2344;
+  --color-dark-purple-light: #3d3460;
+}
+
+@layer base {
   body {
     background-color: #090d16;
     color: #f8fafc;
@@ -18,7 +27,7 @@
   }
 }
 
-/* Custom scrollbars */
+/* ─── Custom Scrollbars ─── */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -34,11 +43,70 @@
   background: #334155;
 }
 
+/* ─── Existing Spin Animation ─── */
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
-
 .spin {
   animation: spin 1s linear infinite;
+}
+
+/* ─── Hero Animations ─── */
+@keyframes hero-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes hero-fade-in-slow {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes pill-shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.animate-hero-fade-in {
+  animation: hero-fade-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-hero-fade-in-delay-1 {
+  animation: hero-fade-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;
+}
+
+.animate-hero-fade-in-delay-2 {
+  animation: hero-fade-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both;
+}
+
+.animate-hero-fade-in-delay-3 {
+  animation: hero-fade-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.45s both;
+}
+
+.animate-hero-fade-in-delay-4 {
+  animation: hero-fade-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.6s both;
+}
+
+.animate-hero-video {
+  animation: hero-fade-in-slow 1.5s ease-out both;
+}
+
+/* ─── Glassmorphism Pill ─── */
+.glass-pill {
+  background: rgba(85, 80, 110, 0.4);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(164, 132, 215, 0.5);
+}
+
+/* ─── Mobile Menu Transition ─── */
+.mobile-menu-enter {
+  animation: hero-fade-in-slow 0.25s ease-out both;
 }
