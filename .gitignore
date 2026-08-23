@@ -49,11 +49,13 @@ frontend/dist/
 uploads/
 temp/
 
-# Coverage
+# Coverage & Testing
 htmlcov/
 .coverage
 .coverage.*
 coverage.xml
+.pytest_cache/
+*.pytest_cache
 
 # Alembic
 alembic/versions/*.pyc

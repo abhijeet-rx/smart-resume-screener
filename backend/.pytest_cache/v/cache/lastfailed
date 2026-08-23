@@ -1,3 +1,0 @@
-{
-  "tests/test_resume_extraction.py::TestResumeExtraction::test_extract_resume_profile_from_sample": true
-}
