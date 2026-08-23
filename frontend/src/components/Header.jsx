@@ -38,38 +38,38 @@ export default function Header({ activeTab, setActiveTab }) {
   ];
 
   return (
-    <header className="border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-md sticky top-0 z-50 mb-8">
+    <header className="border-b border-[rgba(164,132,215,0.2)] bg-[#2b2344]/60 backdrop-blur-xl sticky top-0 z-50 mb-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 gap-4">
           
           {/* Brand Logo & Title */}
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/25 border border-indigo-400/30">
+            <div className="w-9 h-9 rounded-lg bg-[#7b39fc] flex items-center justify-center shadow-lg shadow-[rgba(123,57,252,0.35)] border border-[#9256ff]/30">
               <Cpu className="w-5 h-5 text-white" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-bold text-slate-100 text-sm tracking-tight">Smart Resume Screener</span>
-                <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                <span className="font-manrope font-bold text-white text-sm tracking-tight">Smart Resume Screener</span>
+                <span className="text-[10px] uppercase font-cabin font-bold tracking-wider px-2 py-0.5 rounded-[6px] bg-[#7b39fc] text-white">
                   Enterprise
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400 hidden sm:block">Deterministic Matching + Semantic Candidate Ranking</p>
+              <p className="text-[11px] text-white/50 font-inter hidden sm:block">Deterministic Matching + Semantic Candidate Ranking</p>
             </div>
           </div>
 
-          {/* Navigation Tabs (Sleek Linear/Vercel Pill Design) */}
-          <nav className="flex items-center bg-slate-900/90 p-1 rounded-xl border border-slate-800/80">
+          {/* Navigation Tabs (Glassmorphic Pill Design) */}
+          <nav className="flex items-center bg-[#18112b] p-1 rounded-xl border border-[rgba(164,132,215,0.2)]">
             {navItems.map((item) => {
               const isActive = activeTab === item.id;
               return (
                 <button
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
-                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
+                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-manrope font-semibold transition-all duration-200 cursor-pointer ${
                     isActive
-                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 border border-indigo-500/30'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                      ? 'bg-[#7b39fc] text-white shadow-[0_4px_14px_rgba(123,57,252,0.4)]'
+                      : 'text-white/60 hover:text-white hover:bg-white/5'
                   }`}
                 >
                   {item.icon}
@@ -84,21 +84,21 @@ export default function Header({ activeTab, setActiveTab }) {
             {/* Health Status Pill */}
             <button
               onClick={checkHealthStatus}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-cabin font-medium border transition-colors cursor-pointer ${
                 health.status === 'online'
-                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20'
+                  ? 'bg-[rgba(16,185,129,0.15)] text-[#34d399] border-[rgba(16,185,129,0.35)] hover:bg-[rgba(16,185,129,0.25)]'
                   : health.status === 'checking'
-                  ? 'bg-slate-800 text-slate-400 border-slate-700'
-                  : 'bg-rose-500/10 text-rose-400 border-rose-500/30 hover:bg-rose-500/20'
+                  ? 'bg-[#2b2344]/50 text-white/50 border-[rgba(164,132,215,0.2)]'
+                  : 'bg-[rgba(244,63,94,0.15)] text-[#f87171] border-[rgba(244,63,94,0.35)] hover:bg-[rgba(244,63,94,0.25)]'
               }`}
               title="Click to recheck backend API status"
             >
               {health.status === 'online' ? (
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="w-2 h-2 rounded-full bg-[#34d399] pulse-dot inline-block" />
               ) : health.status === 'checking' ? (
-                <RefreshCw className="w-3.5 h-3.5 animate-spin text-slate-400" />
+                <RefreshCw className="w-3.5 h-3.5 animate-spin text-white/50" />
               ) : (
-                <AlertCircle className="w-3.5 h-3.5 text-rose-400" />
+                <span className="w-2 h-2 rounded-full bg-[#f87171] pulse-dot inline-block" />
               )}
               <span className="hidden sm:inline">{health.message}</span>
             </button>
@@ -106,9 +106,9 @@ export default function Header({ activeTab, setActiveTab }) {
             {/* API Key Modal Button */}
             <button
               onClick={() => setShowKeyModal(true)}
-              className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium text-slate-300 bg-slate-900 border border-slate-800 hover:border-slate-700 hover:bg-slate-850 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-cabin font-medium text-white/70 bg-[#2b2344]/50 border border-[rgba(164,132,215,0.2)] hover:border-[rgba(164,132,215,0.4)] hover:bg-[#2b2344]/70 transition-colors cursor-pointer"
             >
-              <Key className="w-3.5 h-3.5 text-slate-400" />
+              <Key className="w-3.5 h-3.5 text-white/50" />
               <span className="hidden lg:inline">{getApiKey() ? 'API Key Set' : 'Set Key'}</span>
             </button>
           </div>
@@ -117,37 +117,37 @@ export default function Header({ activeTab, setActiveTab }) {
 
       {/* API Key Modal */}
       {showKeyModal && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl max-w-md w-full p-6 shadow-2xl space-y-4">
+        <div className="fixed inset-0 bg-[#0e091b]/80 backdrop-blur-lg flex items-center justify-center z-50 p-4">
+          <div className="glass-surface rounded-2xl max-w-md w-full p-6 shadow-[0_16px_48px_rgba(0,0,0,0.5)] space-y-4">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center border border-indigo-500/20">
+              <div className="w-8 h-8 rounded-lg bg-[#7b39fc]/15 text-[#7b39fc] flex items-center justify-center border border-[#7b39fc]/30">
                 <Key className="w-4 h-4" />
               </div>
-              <h3 className="text-sm font-bold text-slate-100">API Key Configuration</h3>
+              <h3 className="text-sm font-manrope font-bold text-white">API Key Configuration</h3>
             </div>
-            <p className="text-xs text-slate-400">
-              If your backend has authorization enabled via <code className="text-indigo-400">API_KEY</code>, enter it below to authorize all request headers.
+            <p className="text-xs text-white/60 font-inter">
+              If your backend has authorization enabled via <code className="text-[#7b39fc]">API_KEY</code>, enter it below to authorize all request headers.
             </p>
             <div className="space-y-1.5">
-              <label className="text-[11px] font-medium text-slate-400">X-API-Key Header</label>
+              <label className="text-[11px] font-manrope font-medium text-white/50">X-API-Key Header</label>
               <input
                 type="password"
                 placeholder="Leave empty if auth is disabled in dev mode"
                 value={apiKeyInput}
                 onChange={(e) => setApiKeyInput(e.target.value)}
-                className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-lg text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                className="w-full px-3 py-2 text-xs font-inter glass-input rounded-lg text-white/90 placeholder:text-white/30"
               />
             </div>
             <div className="flex justify-end gap-2 pt-2">
               <button
                 onClick={() => setShowKeyModal(false)}
-                className="px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800"
+                className="px-3.5 py-1.5 rounded-lg text-xs font-cabin font-medium text-white/50 hover:text-white hover:bg-white/5 cursor-pointer transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSaveApiKey}
-                className="px-3.5 py-1.5 rounded-lg text-xs font-medium bg-indigo-600 text-white hover:bg-indigo-500 shadow-md shadow-indigo-600/20"
+                className="px-3.5 py-1.5 rounded-lg text-xs font-cabin font-medium bg-[#7b39fc] text-white hover:bg-[#6a2ee6] shadow-[0_4px_14px_rgba(123,57,252,0.3)] cursor-pointer transition-colors"
               >
                 Save Key
               </button>

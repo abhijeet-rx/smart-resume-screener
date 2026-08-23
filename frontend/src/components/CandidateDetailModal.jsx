@@ -32,26 +32,26 @@ export default function CandidateDetailModal({ candidateId, onClose }) {
       case 'SHORTLIST':
       case 'STRONG_MATCH':
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-cabin font-bold tracking-wide uppercase bg-[rgba(16,185,129,0.15)] text-[#34d399] border border-[rgba(16,185,129,0.35)]">
             <CheckCircle2 className="w-4 h-4" /> SHORTLIST
           </span>
         );
       case 'GOOD_MATCH':
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-cabin font-bold tracking-wide uppercase bg-[rgba(6,182,212,0.15)] text-[#38bdf8] border border-[rgba(6,182,212,0.35)]">
             <Sparkles className="w-4 h-4" /> GOOD MATCH
           </span>
         );
       case 'REVIEW':
       case 'PARTIAL_MATCH':
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase bg-amber-500/10 text-amber-400 border border-amber-500/30">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-cabin font-bold tracking-wide uppercase bg-[rgba(245,158,11,0.15)] text-[#fbbf24] border border-[rgba(245,158,11,0.35)]">
             <AlertCircle className="w-4 h-4" /> REVIEW
           </span>
         );
       default:
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase bg-rose-500/10 text-rose-400 border border-rose-500/30">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-cabin font-bold tracking-wide uppercase bg-[rgba(244,63,94,0.15)] text-[#f87171] border border-[rgba(244,63,94,0.35)]">
             <XCircle className="w-4 h-4" /> REJECT
           </span>
         );
@@ -82,33 +82,33 @@ export default function CandidateDetailModal({ candidateId, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-50 p-4">
-      <div className="bg-slate-900 border border-slate-800 rounded-xl max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 bg-[#0e091b]/80 backdrop-blur-lg flex items-center justify-center z-50 p-4">
+      <div className="bg-[#1a1333] border border-[rgba(164,132,215,0.3)] rounded-2xl max-w-3xl w-full max-h-[90vh] flex flex-col shadow-[0_16px_48px_rgba(0,0,0,0.5)] overflow-hidden">
         
         {/* Modal Header */}
-        <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/50">
+        <div className="px-6 py-4 border-b border-[rgba(164,132,215,0.15)] flex items-center justify-between bg-[#0e091b]/50">
           <div>
             {loading ? (
-              <div className="flex items-center gap-2 text-xs text-slate-400">
-                <Loader2 className="w-4 h-4 animate-spin text-indigo-400" /> Fetching Candidate Inspection Data...
+              <div className="flex items-center gap-2 text-xs text-white/50 font-inter">
+                <Loader2 className="w-4 h-4 animate-spin text-[#7b39fc]" /> Fetching Candidate Inspection Data...
               </div>
             ) : detail ? (
               <div>
-                <h2 className="text-lg font-bold text-slate-100">{detail.candidate_name || 'Anonymous Candidate'}</h2>
-                <div className="flex items-center gap-4 text-xs text-slate-400 mt-1 flex-wrap">
-                  {detail.candidate_email && <span className="flex items-center gap-1"><Mail className="w-3.5 h-3.5 text-slate-500" /> {detail.candidate_email}</span>}
-                  {detail.candidate_phone && <span className="flex items-center gap-1"><Phone className="w-3.5 h-3.5 text-slate-500" /> {detail.candidate_phone}</span>}
-                  <span className="flex items-center gap-1"><FileText className="w-3.5 h-3.5 text-slate-500" /> {detail.resume_filename}</span>
+                <h2 className="text-lg font-serif text-white">{detail.candidate_name || 'Anonymous Candidate'}</h2>
+                <div className="flex items-center gap-4 text-xs text-white/50 font-inter mt-1 flex-wrap">
+                  {detail.candidate_email && <span className="flex items-center gap-1"><Mail className="w-3.5 h-3.5 text-white/30" /> {detail.candidate_email}</span>}
+                  {detail.candidate_phone && <span className="flex items-center gap-1"><Phone className="w-3.5 h-3.5 text-white/30" /> {detail.candidate_phone}</span>}
+                  <span className="flex items-center gap-1"><FileText className="w-3.5 h-3.5 text-white/30" /> {detail.resume_filename}</span>
                 </div>
               </div>
             ) : (
-              <h3 className="text-sm font-bold text-slate-100">Candidate Inspection</h3>
+              <h3 className="text-sm font-manrope font-bold text-white">Candidate Inspection</h3>
             )}
           </div>
 
           <button
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition-colors"
+            className="p-1.5 text-white/40 hover:text-white hover:bg-white/5 rounded-lg transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -117,27 +117,27 @@ export default function CandidateDetailModal({ candidateId, onClose }) {
         {/* Modal Body */}
         <div className="p-6 overflow-y-auto space-y-6 flex-1 text-xs">
           {error ? (
-            <div className="p-4 bg-rose-500/10 border border-rose-500/30 text-rose-400 rounded-xl">
+            <div className="p-4 bg-[rgba(244,63,94,0.15)] border border-[rgba(244,63,94,0.35)] text-[#f87171] rounded-xl font-inter">
               {error}
             </div>
           ) : detail ? (
             <>
               {/* Match Score & Recommendation Card */}
-              <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-5 space-y-3">
+              <div className="bg-[#0e091b]/60 border border-[rgba(164,132,215,0.2)] rounded-xl p-5 space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">AI Recruiter Evaluation</span>
+                  <span className="text-[11px] font-manrope font-semibold uppercase tracking-wider text-white/40">AI Recruiter Evaluation</span>
                   <div>{renderBadge(detail.recommendation)}</div>
                 </div>
 
                 {/* Score Bar */}
                 <div className="space-y-1">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="font-semibold text-slate-400">Overall Match Score</span>
-                    <span className="text-xl font-extrabold" style={{ color: getScoreColor(detail.scores?.final_score) }}>
+                    <span className="font-inter font-semibold text-white/50">Overall Match Score</span>
+                    <span className="text-xl font-serif font-extrabold" style={{ color: getScoreColor(detail.scores?.final_score) }}>
                       {Math.round(detail.scores?.final_score || 0)}%
                     </span>
                   </div>
-                  <div className="h-3 bg-slate-900 rounded-full overflow-hidden border border-slate-800">
+                  <div className="h-3 bg-[#0e091b] rounded-full overflow-hidden border border-[rgba(164,132,215,0.15)]">
                     <div
                       className="h-full rounded-full transition-all duration-500"
                       style={{
@@ -150,27 +150,27 @@ export default function CandidateDetailModal({ candidateId, onClose }) {
 
                 {/* Score Component Breakdown Pills */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2">
-                  <div className="bg-slate-900/80 border border-slate-800 p-2.5 rounded-lg text-center">
-                    <div className="text-[10px] text-slate-500 font-medium">Skill Match (40%)</div>
-                    <div className="text-sm font-bold mt-0.5" style={{ color: getScoreColor(detail.scores?.skill_score) }}>
+                  <div className="bg-[#2b2344]/50 border border-[rgba(164,132,215,0.2)] p-2.5 rounded-lg text-center">
+                    <div className="text-[10px] text-white/40 font-manrope font-medium">Skill Match (40%)</div>
+                    <div className="text-sm font-serif font-bold mt-0.5" style={{ color: getScoreColor(detail.scores?.skill_score) }}>
                       {Math.round(detail.scores?.skill_score || 0)}%
                     </div>
                   </div>
-                  <div className="bg-slate-900/80 border border-slate-800 p-2.5 rounded-lg text-center">
-                    <div className="text-[10px] text-slate-500 font-medium">Semantic (30%)</div>
-                    <div className="text-sm font-bold mt-0.5" style={{ color: getScoreColor(detail.scores?.semantic_score) }}>
+                  <div className="bg-[#2b2344]/50 border border-[rgba(164,132,215,0.2)] p-2.5 rounded-lg text-center">
+                    <div className="text-[10px] text-white/40 font-manrope font-medium">Semantic (30%)</div>
+                    <div className="text-sm font-serif font-bold mt-0.5" style={{ color: getScoreColor(detail.scores?.semantic_score) }}>
                       {Math.round(detail.scores?.semantic_score || 0)}%
                     </div>
                   </div>
-                  <div className="bg-slate-900/80 border border-slate-800 p-2.5 rounded-lg text-center">
-                    <div className="text-[10px] text-slate-500 font-medium">Experience (20%)</div>
-                    <div className="text-sm font-bold mt-0.5" style={{ color: getScoreColor(detail.scores?.experience_score) }}>
+                  <div className="bg-[#2b2344]/50 border border-[rgba(164,132,215,0.2)] p-2.5 rounded-lg text-center">
+                    <div className="text-[10px] text-white/40 font-manrope font-medium">Experience (20%)</div>
+                    <div className="text-sm font-serif font-bold mt-0.5" style={{ color: getScoreColor(detail.scores?.experience_score) }}>
                       {Math.round(detail.scores?.experience_score || 0)}%
                     </div>
                   </div>
-                  <div className="bg-slate-900/80 border border-slate-800 p-2.5 rounded-lg text-center">
-                    <div className="text-[10px] text-slate-500 font-medium">Education (10%)</div>
-                    <div className="text-sm font-bold mt-0.5" style={{ color: getScoreColor(detail.scores?.education_score) }}>
+                  <div className="bg-[#2b2344]/50 border border-[rgba(164,132,215,0.2)] p-2.5 rounded-lg text-center">
+                    <div className="text-[10px] text-white/40 font-manrope font-medium">Education (10%)</div>
+                    <div className="text-sm font-serif font-bold mt-0.5" style={{ color: getScoreColor(detail.scores?.education_score) }}>
                       {Math.round(detail.scores?.education_score || 0)}%
                     </div>
                   </div>
@@ -181,35 +181,35 @@ export default function CandidateDetailModal({ candidateId, onClose }) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 
                 {/* Skills Checklist Card */}
-                <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-4 space-y-3">
-                  <h4 className="font-bold text-slate-200 flex items-center gap-1.5">
-                    <Award className="w-4 h-4 text-indigo-400" /> Skill Overlap Breakdown
+                <div className="bg-[#0e091b]/60 border border-[rgba(164,132,215,0.2)] rounded-xl p-4 space-y-3">
+                  <h4 className="font-manrope font-bold text-white flex items-center gap-1.5">
+                    <Award className="w-4 h-4 text-[#7b39fc]" /> Skill Overlap Breakdown
                   </h4>
                   
                   <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
                     {detail.match_details?.skill_details?.matched_required?.map((sk, idx) => (
-                      <div key={`mreq-${idx}`} className="flex items-center gap-2 text-emerald-400 text-xs">
+                      <div key={`mreq-${idx}`} className="flex items-center gap-2 text-[#34d399] text-xs font-inter">
                         <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
                         <span>{sk}</span>
                       </div>
                     ))}
 
                     {detail.match_details?.skill_details?.matched_preferred?.map((sk, idx) => (
-                      <div key={`mpref-${idx}`} className="flex items-center gap-2 text-cyan-400 text-xs">
+                      <div key={`mpref-${idx}`} className="flex items-center gap-2 text-[#38bdf8] text-xs font-inter">
                         <Sparkles className="w-3.5 h-3.5 shrink-0" />
                         <span>{sk} (Preferred)</span>
                       </div>
                     ))}
 
                     {detail.match_details?.skill_details?.missing_required?.map((sk, idx) => (
-                      <div key={`missreq-${idx}`} className="flex items-center gap-2 text-rose-400 text-xs">
+                      <div key={`missreq-${idx}`} className="flex items-center gap-2 text-[#f87171] text-xs font-inter">
                         <XCircle className="w-3.5 h-3.5 shrink-0" />
                         <span>{sk}</span>
                       </div>
                     ))}
 
                     {detail.match_details?.skill_details?.missing_preferred?.map((sk, idx) => (
-                      <div key={`misspref-${idx}`} className="flex items-center gap-2 text-slate-500 text-xs">
+                      <div key={`misspref-${idx}`} className="flex items-center gap-2 text-white/30 text-xs font-inter">
                         <X className="w-3.5 h-3.5 shrink-0" />
                         <span>{sk} (Preferred missing)</span>
                       </div>
@@ -220,21 +220,21 @@ export default function CandidateDetailModal({ candidateId, onClose }) {
                 {/* Experience & Education Summary */}
                 <div className="space-y-4">
                   {/* Experience */}
-                  <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-4 space-y-2">
-                    <h4 className="font-bold text-cyan-400 flex items-center gap-1.5">
+                  <div className="bg-[#0e091b]/60 border border-[rgba(164,132,215,0.2)] rounded-xl p-4 space-y-2">
+                    <h4 className="font-manrope font-bold text-[#38bdf8] flex items-center gap-1.5">
                       <Briefcase className="w-4 h-4" /> Relevant Work Experience
                     </h4>
                     {(() => {
                       const exp = getExperienceDisplay(detail.match_details, detail.full_profile);
                       return (
-                        <div className="flex gap-4 text-xs">
+                        <div className="flex gap-4 text-xs font-inter">
                           <div>
-                            <span className="text-slate-400">Relevant: </span>
-                            <strong className="text-emerald-400">{exp.relevant} yrs</strong>
+                            <span className="text-white/50">Relevant: </span>
+                            <strong className="text-[#34d399]">{exp.relevant} yrs</strong>
                           </div>
                           <div>
-                            <span className="text-slate-400">Total: </span>
-                            <strong className="text-slate-200">{exp.total} yrs</strong>
+                            <span className="text-white/50">Total: </span>
+                            <strong className="text-white/90">{exp.total} yrs</strong>
                           </div>
                         </div>
                       );
@@ -242,19 +242,19 @@ export default function CandidateDetailModal({ candidateId, onClose }) {
                   </div>
 
                   {/* Education */}
-                  <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-4 space-y-2">
-                    <h4 className="font-bold text-amber-400 flex items-center gap-1.5">
+                  <div className="bg-[#0e091b]/60 border border-[rgba(164,132,215,0.2)] rounded-xl p-4 space-y-2">
+                    <h4 className="font-manrope font-bold text-[#fbbf24] flex items-center gap-1.5">
                       <GraduationCap className="w-4 h-4" /> Educational Qualification
                     </h4>
                     {(() => {
                       const edu = getEducationDisplay(detail.full_profile);
                       return (
-                        <div className="flex items-center gap-2 text-xs">
-                          <span className="text-slate-200">{edu.text}</span>
+                        <div className="flex items-center gap-2 text-xs font-inter">
+                          <span className="text-white/80">{edu.text}</span>
                           {edu.valid ? (
-                            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                            <CheckCircle2 className="w-4 h-4 text-[#34d399] shrink-0" />
                           ) : (
-                            <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+                            <AlertCircle className="w-4 h-4 text-[#fbbf24] shrink-0" />
                           )}
                         </div>
                       );
@@ -264,44 +264,44 @@ export default function CandidateDetailModal({ candidateId, onClose }) {
               </div>
 
               {/* Strengths & Gaps AI Reasoning */}
-              <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-5 space-y-4">
-                <h4 className="font-bold text-slate-200 flex items-center gap-2">
-                  <Brain className="w-4 h-4 text-indigo-400" /> AI Recruiter Explainability & Insights
+              <div className="bg-[#0e091b]/60 border border-[rgba(164,132,215,0.2)] rounded-xl p-5 space-y-4">
+                <h4 className="font-manrope font-bold text-white flex items-center gap-2">
+                  <Brain className="w-4 h-4 text-[#7b39fc]" /> AI Recruiter Explainability & Insights
                 </h4>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Strengths */}
                   <div className="space-y-2">
-                    <span className="font-semibold text-emerald-400 flex items-center gap-1 text-[11px]">
+                    <span className="font-cabin font-semibold text-[#34d399] flex items-center gap-1 text-[11px]">
                       <CheckCircle2 className="w-3.5 h-3.5" /> Strengths
                     </span>
-                    <ul className="space-y-1 text-slate-300 text-xs">
+                    <ul className="space-y-1 text-white/70 text-xs font-inter">
                       {detail.reasoning?.strengths?.map((s, idx) => (
                         <li key={idx} className="flex items-start gap-1.5">
-                          <span className="text-emerald-400">•</span> {s}
+                          <span className="text-[#34d399]">•</span> {s}
                         </li>
-                      )) || <li className="text-slate-500">None noted</li>}
+                      )) || <li className="text-white/30">None noted</li>}
                     </ul>
                   </div>
 
                   {/* Gaps */}
                   <div className="space-y-2">
-                    <span className="font-semibold text-rose-400 flex items-center gap-1 text-[11px]">
+                    <span className="font-cabin font-semibold text-[#f87171] flex items-center gap-1 text-[11px]">
                       <AlertCircle className="w-3.5 h-3.5" /> Gaps & Missing Requirements
                     </span>
-                    <ul className="space-y-1 text-slate-300 text-xs">
+                    <ul className="space-y-1 text-white/70 text-xs font-inter">
                       {detail.reasoning?.gaps?.map((g, idx) => (
                         <li key={idx} className="flex items-start gap-1.5">
-                          <span className="text-rose-400">•</span> {g}
+                          <span className="text-[#f87171]">•</span> {g}
                         </li>
-                      )) || <li className="text-slate-500">None noted</li>}
+                      )) || <li className="text-white/30">None noted</li>}
                     </ul>
                   </div>
                 </div>
 
                 {detail.reasoning?.reasoning && (
-                  <div className="pt-3 border-t border-slate-800 text-xs text-slate-400 leading-relaxed">
-                    <strong className="text-slate-200">Summary: </strong>{detail.reasoning.reasoning}
+                  <div className="pt-3 border-t border-[rgba(164,132,215,0.15)] text-xs text-white/60 font-inter leading-relaxed">
+                    <strong className="text-white/90">Summary: </strong>{detail.reasoning.reasoning}
                   </div>
                 )}
               </div>

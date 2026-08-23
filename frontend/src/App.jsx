@@ -27,7 +27,7 @@ function App() {
 
   /* ── Dashboard App (existing, untouched) ── */
   return (
-    <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100 font-sans selection:bg-indigo-500 selection:text-white">
+    <div className="min-h-screen flex flex-col bg-[#0e091b] text-slate-100 font-inter selection:bg-[#7b39fc] selection:text-white">
       {/* Top Navigation Bar */}
       <Header activeTab={activeTab} setActiveTab={setActiveTab} />
 
@@ -87,7 +87,7 @@ function App() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-800/80 py-6 px-4 text-center text-xs text-slate-500 bg-slate-950">
+      <footer className="border-t border-[rgba(164,132,215,0.15)] py-6 px-4 text-center text-xs text-white/40 bg-[#0e091b] font-inter">
         Smart Resume Screener v0.2.0 • Enterprise Deterministic Matching + LLM Reasoning Pipeline
       </footer>
     </div>

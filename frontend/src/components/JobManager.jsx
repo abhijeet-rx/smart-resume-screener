@@ -69,17 +69,17 @@ export default function JobManager({ selectedJobId, onSelectJob, onJobCreated })
   return (
     <div className="space-y-4">
       {/* Header Bar */}
-      <div className="flex items-center justify-between gap-4 flex-wrap pb-2 border-b border-slate-800/80">
+      <div className="flex items-center justify-between gap-4 flex-wrap pb-4 border-b border-[rgba(164,132,215,0.15)]">
         <div>
-          <h2 className="text-base font-bold text-slate-100 flex items-center gap-2">
-            <Briefcase className="w-4 h-4 text-indigo-400" /> Target Job Descriptions
+          <h2 className="font-serif text-xl text-white flex items-center gap-2">
+            <Briefcase className="w-5 h-5 text-[#7b39fc]" /> Active <em>Target</em> Job Roles
           </h2>
-          <p className="text-xs text-slate-400 mt-0.5">Select an active job role to screen candidates or view ranked leaderboards.</p>
+          <p className="text-xs text-white/50 font-inter mt-1">Select an active job role to screen candidates or view ranked leaderboards.</p>
         </div>
 
         <button
           onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-500 shadow-md shadow-indigo-600/20 transition-all"
+          className="flex items-center gap-1.5 px-4 py-2.5 rounded-[10px] text-xs font-cabin font-semibold bg-[#7b39fc] text-white hover:bg-[#6a2ee6] shadow-[0_4px_14px_rgba(123,57,252,0.3)] transition-all cursor-pointer"
         >
           <Plus className="w-4 h-4" /> Post New Job
         </button>
@@ -87,20 +87,20 @@ export default function JobManager({ selectedJobId, onSelectJob, onJobCreated })
 
       {/* Jobs Grid */}
       {loading ? (
-        <div className="bg-slate-900/60 border border-slate-800/80 rounded-xl p-12 text-center text-slate-400">
-          <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-indigo-400" />
-          <span className="text-xs">Loading target job descriptions...</span>
+        <div className="glass-card rounded-2xl p-12 text-center text-white/50">
+          <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-[#7b39fc]" />
+          <span className="text-xs font-inter">Loading target job descriptions...</span>
         </div>
       ) : jobs.length === 0 ? (
-        <div className="bg-slate-900/60 border border-slate-800/80 rounded-xl p-12 text-center">
-          <Briefcase className="w-10 h-10 text-slate-600 mx-auto mb-3" />
-          <h3 className="text-sm font-semibold text-slate-200 mb-1">No Jobs Posted Yet</h3>
-          <p className="text-xs text-slate-400 mb-4 max-w-sm mx-auto">
+        <div className="glass-card rounded-2xl p-12 text-center">
+          <Briefcase className="w-10 h-10 text-white/20 mx-auto mb-3" />
+          <h3 className="text-sm font-manrope font-semibold text-white mb-1">No Jobs Posted Yet</h3>
+          <p className="text-xs text-white/50 font-inter mb-4 max-w-sm mx-auto">
             Paste a Job Description or upload a document to let our AI engine extract requirements and create a target role.
           </p>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-500 shadow-md shadow-indigo-600/20"
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-[10px] text-xs font-cabin font-semibold bg-[#7b39fc] text-white hover:bg-[#6a2ee6] shadow-[0_4px_14px_rgba(123,57,252,0.3)] cursor-pointer"
           >
             <Plus className="w-4 h-4" /> Post First Job
           </button>
@@ -113,29 +113,29 @@ export default function JobManager({ selectedJobId, onSelectJob, onJobCreated })
               <div
                 key={job.id}
                 onClick={() => onSelectJob(job.id)}
-                className={`p-4 rounded-xl border transition-all cursor-pointer relative ${
+                className={`p-5 rounded-2xl border transition-all duration-200 cursor-pointer relative backdrop-blur-md hover:scale-[1.01] ${
                   isSelected
-                    ? 'bg-indigo-600/10 border-indigo-500/50 shadow-md shadow-indigo-500/10'
-                    : 'bg-slate-900/60 border-slate-800/80 hover:border-slate-700 hover:bg-slate-900'
+                    ? 'bg-[#2b2344]/70 border-[#7b39fc] ring-2 ring-[#7b39fc]/50 shadow-[0_4px_20px_rgba(123,57,252,0.2)]'
+                    : 'bg-[#2b2344]/40 border-[rgba(164,132,215,0.25)] hover:border-[#7b39fc]/60'
                 }`}
               >
                 <div className="flex items-start justify-between gap-2 mb-2">
-                  <h3 className={`text-sm font-bold truncate ${isSelected ? 'text-indigo-300' : 'text-slate-200'}`}>
+                  <h3 className={`text-sm font-manrope font-bold truncate ${isSelected ? 'text-white' : 'text-white/90'}`}>
                     {job.title || 'Untitled Role'}
                   </h3>
                   {isSelected && (
-                    <span className="w-4 h-4 rounded-full bg-indigo-600 flex items-center justify-center shrink-0">
-                      <Check className="w-2.5 h-2.5 text-white" />
+                    <span className="w-5 h-5 rounded-full bg-[#7b39fc] flex items-center justify-center shrink-0 shadow-[0_2px_8px_rgba(123,57,252,0.4)]">
+                      <Check className="w-3 h-3 text-white" />
                     </span>
                   )}
                 </div>
 
-                <div className="flex items-center gap-4 text-xs text-slate-400">
+                <div className="flex items-center gap-4 text-xs text-white/50 font-inter">
                   <span className="flex items-center gap-1.5">
-                    <Users className="w-3.5 h-3.5 text-cyan-400" /> {job.candidate_count || 0} candidates
+                    <Users className="w-3.5 h-3.5 text-[#7b39fc]/70" /> {job.candidate_count || 0} candidates
                   </span>
                   <span className="flex items-center gap-1.5">
-                    <Calendar className="w-3.5 h-3.5 text-slate-500" /> {new Date(job.created_at).toLocaleDateString()}
+                    <Calendar className="w-3.5 h-3.5 text-white/30" /> {new Date(job.created_at).toLocaleDateString()}
                   </span>
                 </div>
               </div>
@@ -146,27 +146,27 @@ export default function JobManager({ selectedJobId, onSelectJob, onJobCreated })
 
       {/* Post New Job Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+        <div className="fixed inset-0 bg-[#0e091b]/80 backdrop-blur-lg flex items-center justify-center z-50 p-4">
+          <div className="bg-[#1a1333] border border-[rgba(164,132,215,0.3)] border-t-[#7b39fc] rounded-2xl max-w-lg w-full p-6 shadow-[0_16px_48px_rgba(0,0,0,0.5)] space-y-4">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center border border-indigo-500/20">
+              <div className="w-8 h-8 rounded-lg bg-[#7b39fc]/15 text-[#7b39fc] flex items-center justify-center border border-[#7b39fc]/30">
                 <Sparkles className="w-4 h-4" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-slate-100">Post New Job Description</h3>
-                <p className="text-[11px] text-slate-400">Extracts skills, experience thresholds, and education requirements automatically.</p>
+                <h3 className="text-sm font-manrope font-bold text-white">Post New Job Description</h3>
+                <p className="text-[11px] text-white/50 font-inter">Extracts skills, experience thresholds, and education requirements automatically.</p>
               </div>
             </div>
 
-            {/* Selector */}
+            {/* Selector — segmented pill */}
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
                 onClick={() => setCreateMode('text')}
-                className={`flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold border transition-all ${
+                className={`flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-cabin font-semibold border transition-all cursor-pointer ${
                   createMode === 'text'
-                    ? 'bg-indigo-600 text-white border-indigo-500/30'
-                    : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-slate-200'
+                    ? 'bg-[#7b39fc] text-white border-[#7b39fc]/30 shadow-[0_4px_14px_rgba(123,57,252,0.3)]'
+                    : 'bg-[#0e091b] text-white/50 border-[rgba(164,132,215,0.2)] hover:text-white hover:bg-white/5'
                 }`}
               >
                 <FileText className="w-4 h-4" /> Paste Text
@@ -174,10 +174,10 @@ export default function JobManager({ selectedJobId, onSelectJob, onJobCreated })
               <button
                 type="button"
                 onClick={() => setCreateMode('file')}
-                className={`flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold border transition-all ${
+                className={`flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-cabin font-semibold border transition-all cursor-pointer ${
                   createMode === 'file'
-                    ? 'bg-indigo-600 text-white border-indigo-500/30'
-                    : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-slate-200'
+                    ? 'bg-[#7b39fc] text-white border-[#7b39fc]/30 shadow-[0_4px_14px_rgba(123,57,252,0.3)]'
+                    : 'bg-[#0e091b] text-white/50 border-[rgba(164,132,215,0.2)] hover:text-white hover:bg-white/5'
                 }`}
               >
                 <Upload className="w-4 h-4" /> Upload File
@@ -187,32 +187,32 @@ export default function JobManager({ selectedJobId, onSelectJob, onJobCreated })
             <form onSubmit={handleCreateJob} className="space-y-4">
               {createMode === 'text' ? (
                 <div className="space-y-1.5">
-                  <label className="text-[11px] font-medium text-slate-400">Job Description Text</label>
+                  <label className="text-[11px] font-manrope font-medium text-white/50">Job Description Text</label>
                   <textarea
                     placeholder="Paste the full job description text here..."
                     rows={7}
                     value={jdText}
                     onChange={(e) => setJdText(e.target.value)}
-                    className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-lg text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 resize-y"
+                    className="w-full px-3 py-2 text-xs font-inter glass-input rounded-lg text-white/90 resize-y placeholder:text-white/30"
                   />
                 </div>
               ) : (
                 <div className="space-y-1.5">
-                  <label className="text-[11px] font-medium text-slate-400">Upload Document (.pdf, .docx, .txt)</label>
+                  <label className="text-[11px] font-manrope font-medium text-white/50">Upload Document (.pdf, .docx, .txt)</label>
                   <input
                     type="file"
                     accept=".pdf,.docx,.txt"
                     onChange={(e) => setJdFile(e.target.files[0] || null)}
-                    className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-lg text-slate-200 focus:outline-none focus:border-indigo-500"
+                    className="w-full px-3 py-2 text-xs font-inter glass-input rounded-lg text-white/90"
                   />
                   {jdFile && (
-                    <p className="text-[11px] text-emerald-400">Selected: {jdFile.name} ({(jdFile.size / 1024).toFixed(1)} KB)</p>
+                    <p className="text-[11px] text-[#34d399] font-inter">Selected: {jdFile.name} ({(jdFile.size / 1024).toFixed(1)} KB)</p>
                   )}
                 </div>
               )}
 
               {createError && (
-                <div className="flex items-center gap-2 p-3 bg-rose-500/10 border border-rose-500/30 text-rose-400 rounded-lg text-xs">
+                <div className="flex items-center gap-2 p-3 bg-[rgba(244,63,94,0.15)] border border-[rgba(244,63,94,0.35)] text-[#f87171] rounded-xl text-xs font-inter">
                   <AlertCircle className="w-4 h-4 shrink-0" />
                   <span>{createError}</span>
                 </div>
@@ -223,14 +223,14 @@ export default function JobManager({ selectedJobId, onSelectJob, onJobCreated })
                   type="button"
                   onClick={() => setShowCreateModal(false)}
                   disabled={creating}
-                  className="px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800 disabled:opacity-50"
+                  className="px-3.5 py-1.5 rounded-lg text-xs font-cabin font-medium text-white/50 hover:text-white hover:bg-white/5 disabled:opacity-50 cursor-pointer transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={creating}
-                  className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-500 shadow-md shadow-indigo-600/20 disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-cabin font-semibold bg-[#7b39fc] text-white hover:bg-[#6a2ee6] shadow-[0_4px_14px_rgba(123,57,252,0.3)] disabled:opacity-50 cursor-pointer transition-colors"
                 >
                   {creating ? (
                     <>
