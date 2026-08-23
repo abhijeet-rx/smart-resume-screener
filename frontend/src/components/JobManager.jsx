@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Briefcase, FileText, Upload, Users, Calendar, Check, Loader2, Sparkles, AlertCircle, Trash2, X } from 'lucide-react';
 import { api } from '../api';
 
-export default function JobManager({ selectedJobId, onSelectJob, onJobCreated }) {
+export default function JobManager({ selectedJobId, onSelectJob, onJobCreated, refreshTrigger }) {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -36,7 +36,7 @@ export default function JobManager({ selectedJobId, onSelectJob, onJobCreated })
 
   useEffect(() => {
     fetchJobs();
-  }, []);
+  }, [refreshTrigger]);
 
   const handleCreateJob = async (e) => {
     e.preventDefault();

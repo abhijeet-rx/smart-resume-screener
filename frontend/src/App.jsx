@@ -16,10 +16,15 @@ function App() {
 
   const handleJobCreated = (newJob) => {
     setSelectedJobId(newJob.id);
+    setRefreshCandidatesTrigger((prev) => prev + 1);
   };
 
   const handleScreeningComplete = () => {
     setRefreshCandidatesTrigger((prev) => prev + 1);
+    // Auto-navigate to Leaderboard tab so user immediately sees candidate matches right after uploading
+    setTimeout(() => {
+      setActiveTab('dashboard');
+    }, 600);
   };
 
   /* ── Hero Landing Page ── */
@@ -57,6 +62,7 @@ function App() {
                 selectedJobId={selectedJobId}
                 onSelectJob={setSelectedJobId}
                 onJobCreated={handleJobCreated}
+                refreshTrigger={refreshCandidatesTrigger}
               />
 
               <CandidateLeaderboard
@@ -72,6 +78,7 @@ function App() {
                 selectedJobId={selectedJobId}
                 onSelectJob={setSelectedJobId}
                 onJobCreated={handleJobCreated}
+                refreshTrigger={refreshCandidatesTrigger}
               />
             </div>
           )}
@@ -82,11 +89,17 @@ function App() {
                 selectedJobId={selectedJobId}
                 onSelectJob={setSelectedJobId}
                 onJobCreated={handleJobCreated}
+                refreshTrigger={refreshCandidatesTrigger}
               />
 
               <ResumeUploader
                 targetJobId={selectedJobId}
                 onScreeningComplete={handleScreeningComplete}
+              />
+
+              <CandidateLeaderboard
+                selectedJobId={selectedJobId}
+                refreshTrigger={refreshCandidatesTrigger}
               />
             </div>
           )}
@@ -97,6 +110,7 @@ function App() {
                 selectedJobId={selectedJobId}
                 onSelectJob={setSelectedJobId}
                 onJobCreated={handleJobCreated}
+                refreshTrigger={refreshCandidatesTrigger}
               />
 
               <AnalyticsView selectedJobId={selectedJobId} />
