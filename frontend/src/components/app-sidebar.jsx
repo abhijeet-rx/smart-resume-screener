@@ -12,7 +12,8 @@ import {
   SidebarMenuButton,
   useSidebar,
 } from '@/components/ui/sidebar';
-import { Cpu, CheckCircle2, AlertCircle, RefreshCw, Key, Layers, Briefcase, UploadCloud, BarChart2, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { CheckCircle2, AlertCircle, RefreshCw, Key, Layers, Briefcase, UploadCloud, BarChart2, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import SkillSyncLogo from './SkillSyncLogo';
 import { api, getApiKey, setApiKey } from '../api';
 
 export function AppSidebar({ activeTab, setActiveTab }) {
@@ -26,7 +27,7 @@ export function AppSidebar({ activeTab, setActiveTab }) {
     try {
       const res = await api.checkHealth();
       if (res.status === 'ok') {
-        setHealth({ status: 'online', message: `API Online (${res.version || 'v0.2.0'})` });
+        setHealth({ status: 'online', message: `API Online (${res.version || 'v1.0'})` });
       } else {
         setHealth({ status: 'error', message: 'API Error' });
       }
@@ -58,20 +59,19 @@ export function AppSidebar({ activeTab, setActiveTab }) {
         <SidebarHeader>
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-[#7b39fc] flex items-center justify-center shadow-lg shadow-[rgba(123,57,252,0.35)] border border-[#9256ff]/30 shrink-0">
-              <Cpu className="w-5 h-5 text-white" />
+              <SkillSyncLogo className="w-5 h-6 text-white" />
             </div>
             {open && (
               <div className="overflow-hidden transition-all duration-200">
                 <div className="flex items-center gap-2">
-                  <span className="font-manrope font-bold text-white text-sm tracking-tight whitespace-nowrap">
-                    Smart Resume Screener
+                  <span className="font-manrope font-extrabold text-white text-base tracking-tight whitespace-nowrap">
+                    SkillSync
                   </span>
                 </div>
                 <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-[9px] uppercase font-cabin font-bold tracking-wider px-1.5 py-0.5 rounded-[4px] bg-[#7b39fc] text-white">
-                    ENTERPRISE
+                  <span className="text-[10px] text-white/50 font-inter truncate max-w-[145px]" title="Matching potential, not just paper">
+                    Matching potential, not just paper
                   </span>
-                  <span className="text-[10px] text-white/40 font-inter">v0.2.0</span>
                 </div>
               </div>
             )}

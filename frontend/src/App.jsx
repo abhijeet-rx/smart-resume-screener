@@ -45,7 +45,7 @@ function App() {
             </h1>
           </div>
           <div className="text-xs text-white/40 font-inter hidden sm:block">
-            Smart Resume Screener • Enterprise Matching
+            SkillSync • Matching potential, not just paper
           </div>
         </header>
 
@@ -106,7 +106,7 @@ function App() {
 
         {/* Footer */}
         <footer className="border-t border-[rgba(164,132,215,0.15)] py-6 px-4 text-center text-xs text-white/40 bg-[#0e091b] font-inter">
-          Smart Resume Screener v0.2.0 • Enterprise Deterministic Matching + LLM Reasoning Pipeline
+          SkillSync v1.0 • Matching potential, not just paper
         </footer>
       </div>
     </SidebarProvider>

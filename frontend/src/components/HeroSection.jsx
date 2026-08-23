@@ -28,10 +28,10 @@ export default function HeroSection({ onGetStarted, onBookDemo }) {
         {/* Tagline Pill */}
         <div className="glass-pill rounded-[10px] h-[38px] flex items-center gap-2 px-1.5 pr-4 animate-hero-fade-in">
           <span className="bg-[#7b39fc] text-white font-cabin font-medium text-xs rounded-[6px] px-2.5 py-0.5">
-            New
+            SkillSync
           </span>
           <span className="font-cabin font-medium text-sm text-white">
-            Say Hello to Datacore v3.2
+            Matching potential, not just paper
           </span>
         </div>
 
@@ -48,7 +48,7 @@ export default function HeroSection({ onGetStarted, onBookDemo }) {
         {/* Subtext */}
         <p className="font-inter font-normal text-lg text-white/70 mt-6 max-w-[662px] leading-relaxed animate-hero-fade-in-delay-2">
           Upload resumes and job descriptions to get AI-powered scoring, skill matching,
-          and ranked candidate recommendations. Fast screening, 24/7 support.
+          and ranked candidate recommendations — matching potential, not just paper.
         </p>
 
         {/* CTA Buttons */}

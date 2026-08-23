@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ChevronDown, Menu, X } from 'lucide-react';
+import SkillSyncLogo from './SkillSyncLogo';
 
 /**
  * Transparent overlay Navbar for the hero landing page.
@@ -22,32 +23,10 @@ export default function Navbar({ onSignIn, onGetStarted }) {
       <div className="flex items-center justify-between">
 
         {/* ── Logo (Left) ── */}
-        <a href="#" className="flex items-center gap-2 shrink-0" aria-label="Home">
-          <svg width="36" height="28" viewBox="0 0 36 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path
-              d="M4 8L18 2L32 8L18 14L4 8Z"
-              fill="white"
-              opacity="0.9"
-            />
-            <path
-              d="M4 14L18 20L32 14"
-              stroke="white"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              opacity="0.7"
-            />
-            <path
-              d="M4 20L18 26L32 20"
-              stroke="white"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              opacity="0.5"
-            />
-          </svg>
-          <span className="font-manrope font-bold text-white text-lg tracking-tight">
-            Datacore
+        <a href="#" className="flex items-center gap-2.5 shrink-0" aria-label="Home">
+          <SkillSyncLogo className="w-8 h-9 text-white" />
+          <span className="font-manrope font-extrabold text-white text-xl tracking-tight">
+            SkillSync
           </span>
         </a>
 

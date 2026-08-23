@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Cpu, CheckCircle2, AlertCircle, RefreshCw, Key, Layers, Briefcase, UploadCloud, BarChart2 } from 'lucide-react';
+import { CheckCircle2, AlertCircle, RefreshCw, Key, Layers, Briefcase, UploadCloud, BarChart2 } from 'lucide-react';
 import { api, getApiKey, setApiKey } from '../api';
+import SkillSyncLogo from './SkillSyncLogo';
 
 export default function Header({ activeTab, setActiveTab }) {
   const [health, setHealth] = useState({ status: 'checking', message: 'Checking...' });
@@ -12,7 +13,7 @@ export default function Header({ activeTab, setActiveTab }) {
     try {
       const res = await api.checkHealth();
       if (res.status === 'ok') {
-        setHealth({ status: 'online', message: `API Online (${res.version || 'v0.2.0'})` });
+        setHealth({ status: 'online', message: `API Online (${res.version || 'v1.0'})` });
       } else {
         setHealth({ status: 'error', message: 'API Error' });
       }
@@ -45,16 +46,13 @@ export default function Header({ activeTab, setActiveTab }) {
           {/* Brand Logo & Title */}
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg bg-[#7b39fc] flex items-center justify-center shadow-lg shadow-[rgba(123,57,252,0.35)] border border-[#9256ff]/30">
-              <Cpu className="w-5 h-5 text-white" />
+              <SkillSyncLogo className="w-5 h-6 text-white" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-manrope font-bold text-white text-sm tracking-tight">Smart Resume Screener</span>
-                <span className="text-[10px] uppercase font-cabin font-bold tracking-wider px-2 py-0.5 rounded-[6px] bg-[#7b39fc] text-white">
-                  Enterprise
-                </span>
+                <span className="font-manrope font-extrabold text-white text-base tracking-tight">SkillSync</span>
               </div>
-              <p className="text-[11px] text-white/50 font-inter hidden sm:block">Deterministic Matching + Semantic Candidate Ranking</p>
+              <p className="text-[11px] text-white/50 font-inter hidden sm:block">Matching potential, not just paper</p>
             </div>
           </div>
 
