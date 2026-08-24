@@ -74,6 +74,7 @@ function App() {
             <div className="space-y-6 animate-fade-in">
               <ResumeUploader
                 targetJobId={selectedJobId}
+                onSelectJob={setSelectedJobId}
                 onScreeningComplete={handleScreeningComplete}
               />
 
