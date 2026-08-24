@@ -64,6 +64,7 @@ function App() {
             <div className="space-y-6 animate-fade-in">
               <CandidateLeaderboard
                 selectedJobId={selectedJobId}
+                onSelectJob={setSelectedJobId}
                 refreshTrigger={refreshCandidatesTrigger}
               />
             </div>
@@ -78,6 +79,7 @@ function App() {
 
               <CandidateLeaderboard
                 selectedJobId={selectedJobId}
+                onSelectJob={setSelectedJobId}
                 refreshTrigger={refreshCandidatesTrigger}
               />
             </div>

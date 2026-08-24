@@ -1,21 +1,60 @@
-import { useState, useEffect } from 'react';
-import { Trophy, CheckCircle2, Sparkles, AlertCircle, XCircle, ChevronRight, Search, UserCheck, Loader2, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import {
+  Trophy, CheckCircle2, Sparkles, AlertCircle, XCircle, ChevronRight, Search,
+  UserCheck, Loader2, ArrowUpDown, ArrowUp, ArrowDown, Briefcase, ChevronDown, Layers
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '../api';
 import { getScoreColor, formatYears } from '../utils';
 import { NumberTicker } from '@/components/ui/number-ticker';
 import CandidateDetailModal from './CandidateDetailModal';
 
-export default function CandidateLeaderboard({ selectedJobId, refreshTrigger }) {
+export default function CandidateLeaderboard({ selectedJobId, onSelectJob, refreshTrigger }) {
   const [candidates, setCandidates] = useState([]);
   const [jobTitle, setJobTitle] = useState('');
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [jobs, setJobs] = useState([]);
+  const [isJobDropdownOpen, setIsJobDropdownOpen] = useState(false);
   const [filterRec, setFilterRec] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('score');
   const [sortDir, setSortDir] = useState('desc');
   const [inspectCandidateId, setInspectCandidateId] = useState(null);
 
+  const dropdownRef = useRef(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsJobDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Fetch all available job roles
+  const fetchJobs = async () => {
+    try {
+      const data = await api.listJobs(0, 100);
+      const list = data.jobs || [];
+      setJobs(list);
+      // Auto-select first job if none is selected
+      if (!selectedJobId && list.length > 0 && onSelectJob) {
+        onSelectJob(list[0].id);
+      }
+    } catch (err) {
+      console.error('Failed to list jobs:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchJobs();
+  }, [refreshTrigger]);
+
+  // Fetch candidates for current selected job
   const fetchCandidates = async () => {
     if (!selectedJobId) {
       setCandidates([]);
@@ -40,6 +79,13 @@ export default function CandidateLeaderboard({ selectedJobId, refreshTrigger }) 
   useEffect(() => {
     fetchCandidates();
   }, [selectedJobId, refreshTrigger]);
+
+  const handleJobSelect = (jobId) => {
+    setIsJobDropdownOpen(false);
+    if (onSelectJob) {
+      onSelectJob(jobId);
+    }
+  };
 
   const handleSort = (field) => {
     if (sortBy === field) {
@@ -119,12 +165,78 @@ export default function CandidateLeaderboard({ selectedJobId, refreshTrigger }) 
       {/* Header Bar */}
       <div className="flex items-center justify-between gap-4 flex-wrap pb-3 border-b border-[rgba(164,132,215,0.15)]">
         <div>
-          <h3 className="font-serif text-xl text-white flex items-center gap-2">
-            <Trophy className="w-5 h-5 text-amber-400" /> Candidate <em>Rankings</em> & Matches
-            {jobTitle ? <span className="text-sm font-inter font-normal text-white/40 ml-1">for {jobTitle}</span> : ''}
-            <span className="text-xs font-inter font-normal text-white/40">({sortedCandidates.length} of {totalCount})</span>
-          </h3>
-          <p className="text-xs text-white/50 font-inter mt-1">Ranked candidate recommendations evaluated by deterministic matching + semantic LLM analysis.</p>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="font-serif text-xl text-white flex items-center gap-2">
+              <Trophy className="w-5 h-5 text-amber-400" /> Candidate <em>Rankings</em> & Matches
+            </h3>
+
+            {/* Interactive Job Role Selector */}
+            <div className="relative" ref={dropdownRef}>
+              <button
+                onClick={() => setIsJobDropdownOpen(!isJobDropdownOpen)}
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#261c42] hover:bg-[#322557] border border-[#7b39fc]/40 hover:border-[#7b39fc] text-xs font-inter font-medium text-white transition-all shadow-[0_2px_10px_rgba(123,57,252,0.15)] cursor-pointer group"
+              >
+                <Briefcase className="w-3.5 h-3.5 text-[#a78bfa]" />
+                <span className="max-w-[200px] truncate">
+                  {jobTitle || 'Select Job Role'}
+                </span>
+                <ChevronDown className={`w-3.5 h-3.5 text-white/50 group-hover:text-white transition-transform duration-200 ${isJobDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {/* Animated Dropdown Menu */}
+              <AnimatePresence>
+                {isJobDropdownOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -8, scale: 0.96 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -8, scale: 0.96 }}
+                    transition={{ duration: 0.18, ease: "easeOut" }}
+                    className="absolute left-0 top-full mt-2 w-72 bg-[#160d2e]/95 backdrop-blur-xl border border-[rgba(164,132,215,0.3)] rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.6)] z-50 p-2 overflow-hidden"
+                  >
+                    <div className="px-3 py-2 text-[10px] font-manrope font-semibold uppercase tracking-wider text-white/40 border-b border-white/10 flex items-center justify-between">
+                      <span>Target Job Roles</span>
+                      <span>Candidates</span>
+                    </div>
+
+                    <div className="max-h-60 overflow-y-auto py-1 space-y-0.5 custom-scrollbar">
+                      {jobs.length === 0 ? (
+                        <div className="px-3 py-3 text-xs text-white/40 text-center">No job roles created yet.</div>
+                      ) : (
+                        jobs.map((j) => {
+                          const isSelected = j.id === selectedJobId;
+                          return (
+                            <button
+                              key={j.id}
+                              onClick={() => handleJobSelect(j.id)}
+                              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-inter transition-all cursor-pointer ${
+                                isSelected
+                                  ? 'bg-[#7b39fc] text-white font-semibold shadow-[0_2px_8px_rgba(123,57,252,0.4)]'
+                                  : 'text-white/80 hover:bg-white/10 hover:text-white'
+                              }`}
+                            >
+                              <span className="truncate pr-2">{j.title}</span>
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono ${
+                                isSelected ? 'bg-white/20 text-white' : 'bg-[#2b2344] text-white/50'
+                              }`}>
+                                {j.candidate_count ?? 0}
+                              </span>
+                            </button>
+                          );
+                        })
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            <span className="text-xs font-inter font-normal text-white/40">
+              ({sortedCandidates.length} of {totalCount})
+            </span>
+          </div>
+          <p className="text-xs text-white/50 font-inter mt-1.5">
+            Ranked candidate recommendations evaluated by deterministic matching + semantic LLM analysis.
+          </p>
         </div>
 
         {/* Controls */}
@@ -160,119 +272,160 @@ export default function CandidateLeaderboard({ selectedJobId, refreshTrigger }) 
         </div>
       </div>
 
-      {/* Table Content */}
-      {loading ? (
-        <div className="py-12 text-center text-white/50">
-          <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-[#7b39fc]" />
-          <span className="text-xs font-inter">Loading candidate rankings...</span>
-        </div>
-      ) : !selectedJobId ? (
-        <div className="py-12 text-center text-white/50 text-xs font-inter space-y-1">
-          <p>Please select an active role from the <strong className="text-white">Target Job Roles</strong> page to view candidate rankings.</p>
-        </div>
-      ) : sortedCandidates.length === 0 ? (
-        <div className="py-12 text-center text-white/50">
-          <UserCheck className="w-10 h-10 text-white/15 mx-auto mb-3" />
-          <h4 className="text-sm font-manrope font-semibold text-white mb-1">No Screened Candidates Found</h4>
-          <p className="text-xs text-white/50 font-inter">Upload candidate resumes in the Screening Hub to generate matches for this role.</p>
-        </div>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead>
-              <tr className="border-b border-[rgba(164,132,215,0.15)] text-white/40 uppercase tracking-wider text-[10px] font-manrope font-semibold">
-                <th className="py-3 px-4 w-12 text-center">#</th>
-                <th
-                  onClick={() => handleSort('name')}
-                  className="py-3 px-4 cursor-pointer select-none hover:text-white/70 transition-colors"
-                >
-                  <div className="flex items-center gap-1.5">
-                    Candidate {sortBy === 'name' ? (sortDir === 'asc' ? <ArrowUp className="w-3 h-3 text-[#7b39fc]" /> : <ArrowDown className="w-3 h-3 text-[#7b39fc]" />) : <ArrowUpDown className="w-3 h-3 text-white/20" />}
-                  </div>
-                </th>
-                <th
-                  onClick={() => handleSort('score')}
-                  className="py-3 px-4 cursor-pointer select-none hover:text-white/70 w-44 transition-colors"
-                >
-                  <div className="flex items-center gap-1.5">
-                    Match Score {sortBy === 'score' ? (sortDir === 'asc' ? <ArrowUp className="w-3 h-3 text-[#7b39fc]" /> : <ArrowDown className="w-3 h-3 text-[#7b39fc]" />) : <ArrowUpDown className="w-3 h-3 text-white/20" />}
-                  </div>
-                </th>
-                <th
-                  onClick={() => handleSort('experience')}
-                  className="py-3 px-4 cursor-pointer select-none hover:text-white/70 w-32 transition-colors"
-                >
-                  <div className="flex items-center gap-1.5">
-                    Relevant Exp {sortBy === 'experience' ? (sortDir === 'asc' ? <ArrowUp className="w-3 h-3 text-[#7b39fc]" /> : <ArrowDown className="w-3 h-3 text-[#7b39fc]" />) : <ArrowUpDown className="w-3 h-3 text-white/20" />}
-                  </div>
-                </th>
-                <th className="py-3 px-4 w-36">Recommendation</th>
-                <th className="py-3 px-4 w-8"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[rgba(164,132,215,0.1)]">
-              {sortedCandidates.map((c, index) => {
-                const rank = index + 1;
-                const scoreColor = getScoreColor(c.final_score);
-                return (
-                  <tr
-                    key={c.id}
-                    onClick={() => setInspectCandidateId(c.id)}
-                    className="hover:bg-[#3d3460]/40 cursor-pointer transition-colors"
-                  >
-                    {/* Rank */}
-                    <td className="py-3 px-4 text-center font-bold">
-                      <div className={`w-7 h-7 rounded-full flex items-center justify-center mx-auto text-xs ${
-                        rank === 1 ? 'bg-[#f59e0b] text-[#0e091b] font-extrabold shadow-[0_2px_8px_rgba(245,158,11,0.4)]' :
-                        rank === 2 ? 'bg-[#cbd5e1] text-[#0e091b] font-extrabold' :
-                        rank === 3 ? 'bg-[#b45309] text-white font-extrabold' : 'bg-[#2b2344] text-white/50 border border-[rgba(164,132,215,0.2)]'
-                      }`}>
-                        {rank}
-                      </div>
-                    </td>
-
-                    {/* Candidate Name & File */}
-                    <td className="py-3 px-4">
-                      <div className="font-manrope font-bold text-white">{c.candidate_name || 'Unnamed Candidate'}</div>
-                      <div className="text-[11px] text-white/40 font-inter">{c.resume_filename}</div>
-                    </td>
-
-                    {/* Score Bar */}
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-2">
-                        <span className="font-extrabold text-sm w-10 text-right" style={{ color: scoreColor }}>
-                          <NumberTicker value={Math.round(c.final_score)} />%
-                        </span>
-                        <div className="flex-1 h-2 bg-[#0e091b] rounded-full overflow-hidden border border-[rgba(164,132,215,0.15)]">
-                          <div
-                            className="h-full rounded-full transition-all duration-300"
-                            style={{ width: `${Math.round(c.final_score)}%`, backgroundColor: scoreColor }}
-                          />
-                        </div>
-                      </div>
-                    </td>
-
-                    {/* Relevant Experience */}
-                    <td className="py-3 px-4 font-inter font-semibold text-white/80">
-                      {formatYears(c.relevant_experience_months ?? c.total_experience_months)}
-                    </td>
-
-                    {/* Badge */}
-                    <td className="py-3 px-4">
-                      {renderBadge(c.recommendation)}
-                    </td>
-
-                    {/* Arrow */}
-                    <td className="py-3 px-4 text-right">
-                      <ChevronRight className="w-4 h-4 text-white/20" />
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+      {/* Quick Role Switcher Pills Bar */}
+      {jobs.length > 1 && (
+        <div className="flex items-center gap-2 overflow-x-auto py-1 border-b border-[rgba(164,132,215,0.1)] custom-scrollbar">
+          <span className="text-[11px] text-white/40 font-inter uppercase tracking-wider shrink-0 flex items-center gap-1">
+            <Layers className="w-3 h-3 text-[#a78bfa]" /> Switch Role:
+          </span>
+          {jobs.map((j) => {
+            const isSelected = j.id === selectedJobId;
+            return (
+              <button
+                key={j.id}
+                onClick={() => handleJobSelect(j.id)}
+                className={`px-3 py-1 rounded-full text-xs font-inter transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${
+                  isSelected
+                    ? 'bg-[#7b39fc] text-white font-medium shadow-[0_2px_10px_rgba(123,57,252,0.35)] scale-102'
+                    : 'bg-[#1e1735] text-white/60 hover:text-white hover:bg-[#2b2344] border border-[rgba(164,132,215,0.15)]'
+                }`}
+              >
+                <span>{j.title}</span>
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${isSelected ? 'bg-white/20 text-white' : 'bg-white/10 text-white/40'}`}>
+                  {j.candidate_count ?? 0}
+                </span>
+              </button>
+            );
+          })}
         </div>
       )}
+
+      {/* Animated Table Content */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={selectedJobId || 'no-job'}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.25, ease: 'easeInOut' }}
+        >
+          {loading ? (
+            <div className="py-12 text-center text-white/50">
+              <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-[#7b39fc]" />
+              <span className="text-xs font-inter">Loading candidate rankings...</span>
+            </div>
+          ) : !selectedJobId ? (
+            <div className="py-12 text-center text-white/50 text-xs font-inter space-y-1">
+              <p>Please select an active role above or from the <strong className="text-white">Target Job Roles</strong> page to view candidate rankings.</p>
+            </div>
+          ) : sortedCandidates.length === 0 ? (
+            <div className="py-12 text-center text-white/50">
+              <UserCheck className="w-10 h-10 text-white/15 mx-auto mb-3" />
+              <h4 className="text-sm font-manrope font-semibold text-white mb-1">No Screened Candidates Found</h4>
+              <p className="text-xs text-white/50 font-inter">Upload candidate resumes in the Screening Hub to generate matches for this role.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b border-[rgba(164,132,215,0.15)] text-white/40 uppercase tracking-wider text-[10px] font-manrope font-semibold">
+                    <th className="py-3 px-4 w-12 text-center">#</th>
+                    <th
+                      onClick={() => handleSort('name')}
+                      className="py-3 px-4 cursor-pointer select-none hover:text-white/70 transition-colors"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        Candidate {sortBy === 'name' ? (sortDir === 'asc' ? <ArrowUp className="w-3 h-3 text-[#7b39fc]" /> : <ArrowDown className="w-3 h-3 text-[#7b39fc]" />) : <ArrowUpDown className="w-3 h-3 text-white/20" />}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort('score')}
+                      className="py-3 px-4 cursor-pointer select-none hover:text-white/70 w-44 transition-colors"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        Match Score {sortBy === 'score' ? (sortDir === 'asc' ? <ArrowUp className="w-3 h-3 text-[#7b39fc]" /> : <ArrowDown className="w-3 h-3 text-[#7b39fc]" />) : <ArrowUpDown className="w-3 h-3 text-white/20" />}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort('experience')}
+                      className="py-3 px-4 cursor-pointer select-none hover:text-white/70 w-32 transition-colors"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        Relevant Exp {sortBy === 'experience' ? (sortDir === 'asc' ? <ArrowUp className="w-3 h-3 text-[#7b39fc]" /> : <ArrowDown className="w-3 h-3 text-[#7b39fc]" />) : <ArrowUpDown className="w-3 h-3 text-white/20" />}
+                      </div>
+                    </th>
+                    <th className="py-3 px-4 w-36">Recommendation</th>
+                    <th className="py-3 px-4 w-8"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[rgba(164,132,215,0.1)]">
+                  {sortedCandidates.map((c, index) => {
+                    const rank = index + 1;
+                    const scoreColor = getScoreColor(c.final_score);
+                    return (
+                      <motion.tr
+                        key={c.id}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.18, delay: Math.min(index * 0.03, 0.3) }}
+                        onClick={() => setInspectCandidateId(c.id)}
+                        className="hover:bg-[#3d3460]/40 cursor-pointer transition-colors"
+                      >
+                        {/* Rank */}
+                        <td className="py-3 px-4 text-center font-bold">
+                          <div className={`w-7 h-7 rounded-full flex items-center justify-center mx-auto text-xs ${
+                            rank === 1 ? 'bg-[#f59e0b] text-[#0e091b] font-extrabold shadow-[0_2px_8px_rgba(245,158,11,0.4)]' :
+                            rank === 2 ? 'bg-[#cbd5e1] text-[#0e091b] font-extrabold' :
+                            rank === 3 ? 'bg-[#b45309] text-white font-extrabold' : 'bg-[#2b2344] text-white/50 border border-[rgba(164,132,215,0.2)]'
+                          }`}>
+                            {rank}
+                          </div>
+                        </td>
+
+                        {/* Candidate Name & File */}
+                        <td className="py-3 px-4">
+                          <div className="font-manrope font-bold text-white">{c.candidate_name || 'Unnamed Candidate'}</div>
+                          <div className="text-[11px] text-white/40 font-inter">{c.resume_filename}</div>
+                        </td>
+
+                        {/* Score Bar */}
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-2">
+                            <span className="font-extrabold text-sm w-10 text-right" style={{ color: scoreColor }}>
+                              <NumberTicker value={Math.round(c.final_score)} />%
+                            </span>
+                            <div className="flex-1 h-2 bg-[#0e091b] rounded-full overflow-hidden border border-[rgba(164,132,215,0.15)]">
+                              <div
+                                className="h-full rounded-full transition-all duration-300"
+                                style={{ width: `${Math.round(c.final_score)}%`, backgroundColor: scoreColor }}
+                              />
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Relevant Experience */}
+                        <td className="py-3 px-4 font-inter font-semibold text-white/80">
+                          {formatYears(c.relevant_experience_months ?? c.total_experience_months)}
+                        </td>
+
+                        {/* Badge */}
+                        <td className="py-3 px-4">
+                          {renderBadge(c.recommendation)}
+                        </td>
+
+                        {/* Arrow */}
+                        <td className="py-3 px-4 text-right">
+                          <ChevronRight className="w-4 h-4 text-white/20" />
+                        </td>
+                      </motion.tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </motion.div>
+      </AnimatePresence>
 
       {/* Candidate Inspection Drawer Modal */}
       {inspectCandidateId && (
