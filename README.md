@@ -4,43 +4,41 @@
 [![Watch Demo](https://img.shields.io/badge/Watch_Demo-YouTube-red?style=for-the-badge&logo=youtube)](https://youtu.be/AtPcjpYnpeQ)
 [![GitHub Repository](https://img.shields.io/badge/GitHub-Repository-blue?style=for-the-badge&logo=github)](https://github.com/abhijeet-rx/smart-resume-screener)
 
-🌐 **Live Application**: [https://smart-resume-screener-psi.vercel.app](https://smart-resume-screener-psi.vercel.app)  
-🎬 **Video Demonstration**: [https://youtu.be/AtPcjpYnpeQ](https://youtu.be/AtPcjpYnpeQ)
+**Live Application**: [https://smart-resume-screener-psi.vercel.app](https://smart-resume-screener-psi.vercel.app)  
+**Video Demonstration**: [https://youtu.be/AtPcjpYnpeQ](https://youtu.be/AtPcjpYnpeQ)
 
-**Smart Resume Screener** is an AI-powered, production-grade candidate screening application designed to help recruiters process, evaluate, rank, and analyze candidate resumes against job descriptions at scale.
+**Smart Resume Screener** is an automated, production-grade candidate screening application designed to help recruiters process, evaluate, rank, and analyze candidate resumes against job descriptions at scale.
 
-The application features a hybrid evaluation engine combining **deterministic rule-based parsing** (elapsed calendar month experience calculations, degree hierarchy matching, domain skill overlap) with **generative AI semantic reasoning** (Google Gemini & OpenAI GPT-4o) to deliver fast, highly accurate, and non-biased candidate assessments.
+The application features a hybrid evaluation engine combining **deterministic rule-based parsing** (elapsed calendar month experience calculations, degree hierarchy matching, domain skill overlap) with **semantic reasoning models** (Google Gemini & OpenAI GPT-4o) to deliver fast, highly accurate, and non-biased candidate assessments.
 
 ---
 
-## 🎬 Video Demo Walkthrough
+## Video Demo Walkthrough
 
 [![Smart Resume Screener Demo Video](https://img.youtube.com/vi/AtPcjpYnpeQ/maxresdefault.jpg)](https://youtu.be/AtPcjpYnpeQ)
 
-> 🍿 *Click the thumbnail above to watch the application video demonstration on YouTube.*
-
 ---
 
-## 🌟 Key Features
+## Key Features
 
 - **Multi-Format Resume Processing**: Upload PDF (`.pdf`), Word (`.docx`), or Plain Text (`.txt`) resumes individually or in batch uploads.
 - **Automated Non-Blocking Extraction**: Multi-threaded document text parsing (`asyncio.to_thread`) that preserves full resume details without blocking backend performance.
-- **Hybrid AI & Deterministic Evaluation**:
+- **Hybrid Evaluation Engine**:
   - **Deterministic Engine**: Calculates exact elapsed calendar work experience (handling overlapping jobs, current roles, and conservative year-only ranges) and degree hierarchy fit.
-  - **Semantic AI Engine**: Leverages Google Gemini / OpenAI to analyze domain context, project quality, responsibilities, and qualitative alignment.
+  - **Semantic Reasoning Engine**: Leverages Google Gemini and OpenAI to analyze domain context, project quality, responsibilities, and qualitative alignment.
 - **Multi-Dimension Weighted Scoring**: Evaluates candidates across 4 key dimensions:
-  - 🎯 **Skills Overlap (40%)**: Mandatory, preferred, and bonus technical skills matching.
-  - 🧠 **Semantic Relevance (30%)**: Deep AI reasoning on domain relevance and project impact.
-  - 💼 **Work Experience (20%)**: Merged non-overlapping total and domain-relevant experience duration.
-  - 🎓 **Educational Fit (10%)**: Degree level requirement verification and STEM field relevance.
-- **Ranked Leaderboard & Candidate Deep-Dives**: View ranked candidate lists sorted by match percentage with detailed modals showing strengths, gaps, missing skills, and AI justifications.
-- **Instant Job Role Saving**: Sub-millisecond job creation using deterministic profile extraction without blocking on LLM calls.
+  - **Skills Overlap (40%)**: Mandatory, preferred, and bonus technical skills matching.
+  - **Semantic Relevance (30%)**: Deep language model evaluation on domain relevance and project impact.
+  - **Work Experience (20%)**: Merged non-overlapping total and domain-relevant experience duration.
+  - **Educational Fit (10%)**: Degree level requirement verification and STEM field relevance.
+- **Ranked Leaderboard & Candidate Deep-Dives**: View ranked candidate lists sorted by match percentage with detailed modals showing strengths, gaps, missing skills, and detailed justifications.
+- **Instant Job Role Saving**: Sub-millisecond job creation using deterministic profile extraction without blocking on external API calls.
 - **Bulk Database Operations & High Throughput**: Bounded parallel screening concurrency (`asyncio.Semaphore`) and single-transaction bulk database writes (`db.add_all()`).
 - **Comprehensive API & Security**: Secured API key authentication (`X-API-Key`), rate-limiting (`SlowAPI`), and OpenAPI Swagger documentation.
 
 ---
 
-## 🖼️ Application Screenshots
+## Application Screenshots
 
 ### 1. Active Target Job Roles Dashboard
 ![Active Target Job Roles](screenshots/job_roles.png)
@@ -56,7 +54,7 @@ The application features a hybrid evaluation engine combining **deterministic ru
 
 ---
 
-## ⚙️ Application Workflow
+## Application Workflow
 
 ```mermaid
 flowchart TD
@@ -81,14 +79,14 @@ flowchart TD
 
 ---
 
-## 📐 Scoring Methodology
+## Scoring Methodology
 
 Candidates are evaluated across four weighted dimensions. The scoring criteria strictly match the backend implementation in `matcher.py`:
 
 | Dimension | Weight | Description |
 | :--- | :---: | :--- |
 | **Skills Match** | **40%** | Direct match ratio of required, preferred, and bonus technical skills. |
-| **Semantic Relevance** | **30%** | LLM assessment of candidate responsibilities, project impact, and domain fit. |
+| **Semantic Relevance** | **30%** | Language model assessment of candidate responsibilities, project impact, and domain fit. |
 | **Experience Relevance** | **20%** | Exact calendar duration of relevant work experience vs. target job requirement. |
 | **Educational Fit** | **10%** | Degree level hierarchy (PhD > Master's > Bachelor's > Diploma) and field relevance. |
 
@@ -96,7 +94,7 @@ $$\text{Final Match Score} = (0.40 \times \text{Skill}) + (0.30 \times \text{Sem
 
 ---
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 ### Client-Side (Frontend)
 - **Framework**: React 19 + Vite 8
@@ -111,8 +109,8 @@ $$\text{Final Match Score} = (0.40 \times \text{Skill}) + (0.30 \times \text{Sem
 - **Data Validation**: Pydantic v2 & Pydantic-Settings
 - **Rate Limiting**: SlowAPI 0.1.9
 
-### AI & Document Processing
-- **AI Models**: Dual Support — Google Gemini (`gemini-2.5-flash`, `gemini-3.6-flash`) & OpenAI (`gpt-4o`, `gpt-3.5-turbo`)
+### Language Models & Document Processing
+- **Language Models**: Dual Support — Google Gemini (`gemini-2.5-flash`, `gemini-3.6-flash`) & OpenAI (`gpt-4o`, `gpt-3.5-turbo`)
 - **Document Extractors**: PyPDF2 3.0+ & python-docx 1.1+
 
 ### Database & ORM
@@ -122,7 +120,7 @@ $$\text{Final Match Score} = (0.40 \times \text{Skill}) + (0.30 \times \text{Sem
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```text
 smart-resume-screener/
@@ -156,7 +154,7 @@ smart-resume-screener/
 
 ---
 
-## 🚀 Setup & Installation
+## Setup & Installation
 
 ### Prerequisites
 - **Python**: `3.11` or `3.12`
@@ -220,7 +218,7 @@ npm run dev
 
 ---
 
-## 🧪 Running Automated Tests
+## Running Automated Tests
 
 The backend includes a unit test suite covering experience calculations, candidate matching, pagination, reliability, and end-to-end API flows:
 
@@ -231,21 +229,21 @@ venv\Scripts\pytest tests/
 
 ---
 
-## 📡 API Reference Overview
+## API Reference Overview
 
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
 | `GET` | `/api/v1/health` | Service health check |
-| `POST` | `/api/v1/jobs` | Create a target job description (Instant LLM-free extraction) |
+| `POST` | `/api/v1/jobs` | Create a target job description (Instant deterministic extraction) |
 | `GET` | `/api/v1/jobs` | List all created job roles with candidate counts |
 | `GET` | `/api/v1/jobs/{id}` | Retrieve specific job details |
-| `POST` | `/api/v1/jobs/{id}/screen` | Upload & screen multiple resumes against job (Bounded parallel LLM calls) |
+| `POST` | `/api/v1/jobs/{id}/screen` | Upload & screen multiple resumes against job (Bounded parallel language model calls) |
 | `GET` | `/api/v1/jobs/{id}/candidates` | Get ranked candidate leaderboard for job |
 | `GET` | `/api/v1/candidates/{id}` | Get complete candidate evaluation detail (skills, strengths, gaps, reasoning) |
 
 ---
 
-## 🛡️ Security & Performance Highlights
+## Security & Performance Highlights
 
 - **API Security**: Endpoint protection using `X-API-Key` headers and IP rate-limiting via SlowAPI.
 - **Zero-Secret Exposure**: Strict `.gitignore` rules preventing `.env` or credential leakage.
@@ -256,7 +254,7 @@ venv\Scripts\pytest tests/
 
 ---
 
-## 👨‍💻 Author
+## Author
 
 Developed by **Abhijeet Singh**  
 VIT-AP University  
@@ -264,6 +262,6 @@ GitHub Repository: [Smart Resume Screener](https://github.com/abhijeet-rx/smart-
 
 ---
 
-## 📄 License
+## License
 
 This project is open-source and available under the [MIT License](LICENSE).
