@@ -63,15 +63,19 @@ export default function CandidateDetailModal({ candidateId, onClose }) {
       return { text: 'No education specified', valid: false };
     }
     const main = profile.education[0];
-    const text = `${main.degree || ''} ${main.field || ''}`.trim() || 'Degree specified';
-    const isCsStem = /computer|software|engineering|it|data|stem|cs/i.test(text);
+    const degreeField = `${main.degree || ''} ${main.field || ''}`.trim();
+    const inst = main.institution ? `at ${main.institution}` : '';
+    const gradYear = main.graduation_year ? `(${main.graduation_year})` : '';
+
+    const text = [degreeField, inst, gradYear].filter(Boolean).join(' ') || main.institution || 'Degree specified';
+    const isCsStem = /computer|software|engineering|it|data|stem|cs|b\.tech|m\.tech|b\.s|m\.s|b\.e|bca|mca/i.test(text);
     return { text, valid: isCsStem };
   };
 
   const getExperienceDisplay = (matchDetails, profile) => {
     const relMonths = matchDetails?.relevant_experience_months ?? matchDetails?.total_experience_months ?? 0;
     let totMonths = matchDetails?.total_experience_months ?? 0;
-    if (profile && profile.experience) {
+    if (profile && profile.experience && profile.experience.length > 0) {
       const sum = profile.experience.reduce((acc, exp) => acc + (exp.duration_months || 0), 0);
       if (sum > totMonths) totMonths = sum;
     }
@@ -246,19 +250,33 @@ export default function CandidateDetailModal({ candidateId, onClose }) {
                     <h4 className="font-manrope font-bold text-[#fbbf24] flex items-center gap-1.5">
                       <GraduationCap className="w-4 h-4" /> Educational Qualification
                     </h4>
-                    {(() => {
-                      const edu = getEducationDisplay(detail.full_profile);
-                      return (
-                        <div className="flex items-center gap-2 text-xs font-inter">
-                          <span className="text-white/80">{edu.text}</span>
-                          {edu.valid ? (
-                            <CheckCircle2 className="w-4 h-4 text-[#34d399] shrink-0" />
-                          ) : (
-                            <AlertCircle className="w-4 h-4 text-[#fbbf24] shrink-0" />
-                          )}
-                        </div>
-                      );
-                    })()}
+                    {detail.full_profile?.education && detail.full_profile.education.length > 0 ? (
+                      <div className="space-y-2">
+                        {detail.full_profile.education.map((edu, idx) => {
+                          const degreeField = `${edu.degree || ''} ${edu.field || ''}`.trim() || 'Degree';
+                          return (
+                            <div key={idx} className="text-xs font-inter space-y-0.5 border-b border-white/5 pb-1.5 last:border-0 last:pb-0">
+                              <div className="flex items-center justify-between">
+                                <span className="text-white font-semibold flex items-center gap-1.5">
+                                  {degreeField}
+                                </span>
+                                {edu.graduation_year && (
+                                  <span className="text-white/40 font-mono text-[11px]">{edu.graduation_year}</span>
+                                )}
+                              </div>
+                              {edu.institution && (
+                                <div className="text-[#38bdf8] font-medium text-[11px]">at {edu.institution}</div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 text-xs font-inter text-white/50">
+                        <span>No education specified</span>
+                        <AlertCircle className="w-4 h-4 text-[#fbbf24] shrink-0" />
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

@@ -344,11 +344,61 @@ def _fallback_extract_resume_profile(resume_text: str) -> ResumeProfile:
     ]
     found_skills = [s for s in known_skills if re.search(r'\b' + re.escape(s) + r'\b', resume_text, re.I)]
 
-    # Parse education
-    edu_match = re.search(r"(Bachelor's|Master's|B\.Tech|B\.S|M\.S|B\.A|Diploma|Ph\.D)[^\n]*", resume_text, re.I)
-    edu_text = edu_match.group(0).strip() if edu_match else "Bachelor's Degree"
-    year_match = re.search(r'\b(20\d{2}|19\d{2})\b', edu_text)
-    grad_year = int(year_match.group(1)) if year_match else None
+    # Parse education section & institution name
+    edu_entries = []
+    edu_section_text = ""
+    edu_m = re.search(r'(?:EDUCATION|ACADEMIC BACKGROUND|QUALIFICATIONS)(.*?)(?:EXPERIENCE|SKILLS|CERTIFICATIONS|PROJECTS|\Z)', resume_text, re.DOTALL | re.I)
+    if edu_m:
+        edu_section_text = edu_m.group(1).strip()
+
+    if edu_section_text:
+        edu_lines = [l.strip() for l in edu_section_text.splitlines() if l.strip()]
+        for line in edu_lines:
+            degree_m = re.search(r"(Bachelor's|Master's|B\.Tech|M\.Tech|B\.S|M\.S|B\.A|M\.A|B\.E|M\.E|BCA|MCA|Diploma|Ph\.D|Bachelor|Master|Doctorate)[^\n,–—]*", line, re.I)
+            degree = degree_m.group(0).strip() if degree_m else None
+
+            field = None
+            if degree:
+                field_m = re.search(r'(?:in|of|–|-|—)\s*([A-Za-z\s]+(?:Computer Science|Engineering|Information Technology|Cybersecurity|Data Science|Mathematics|Physics|Business|Software|Systems))', line, re.I)
+                if field_m:
+                    field = field_m.group(1).strip()
+
+            inst_m = re.search(r'((?:State|National|Indian|California|Harvard|Stanford|MIT|Oxford|Cambridge|[A-Z][a-zA-Z\s]+)\s+(?:University|Institute|College|School|Academy|Tech))[^\n,]*', line, re.I)
+            if not inst_m:
+                parts = re.split(r'\s*(?:—|–|-|at|from)\s*', line)
+                if len(parts) >= 2:
+                    for p in parts[1:]:
+                        if any(w in p.lower() for w in ["univ", "inst", "coll", "school", "state", "tech"]):
+                            inst_m = p.strip()
+                            break
+
+            institution = inst_m.group(0).strip() if hasattr(inst_m, 'group') else (inst_m if isinstance(inst_m, str) else None)
+            year_m = re.search(r'\b(20\d{2}|19\d{2})\b', line)
+            grad_year = int(year_m.group(1)) if year_m else None
+
+            if degree or institution or grad_year:
+                edu_entries.append(Education(
+                    degree=degree or "Bachelor's Degree",
+                    field=field or ("Computer Science" if any(k in line.lower() for k in ["computer", "tech", "cyber", "software"]) else "General"),
+                    institution=institution,
+                    graduation_year=grad_year
+                ))
+
+    if not edu_entries:
+        edu_match = re.search(r"(Bachelor's|Master's|B\.Tech|B\.S|M\.S|B\.A|Diploma|Ph\.D)[^\n]*", resume_text, re.I)
+        edu_text = edu_match.group(0).strip() if edu_match else "Bachelor's Degree"
+        year_match = re.search(r'\b(20\d{2}|19\d{2})\b', edu_text)
+        grad_year = int(year_match.group(1)) if year_match else None
+
+        inst_m = re.search(r'([A-Za-z\s]+\s+(?:University|Institute|College|School))[^\n,]*', resume_text, re.I)
+        institution = inst_m.group(0).strip() if inst_m else None
+
+        edu_entries.append(Education(
+            degree=edu_text,
+            field="Computer Science" if any(k in edu_text.lower() for k in ["computer", "tech", "cyber", "software"]) else "General",
+            institution=institution,
+            graduation_year=grad_year
+        ))
 
     # Parse certifications
     cert_entries = []
@@ -385,9 +435,15 @@ def _fallback_extract_resume_profile(resume_text: str) -> ResumeProfile:
     if exp_match:
         exp_text = exp_match.group(1)
 
-    date_pattern = r'((?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|[0-1]?\d)[a-z]*[\s/\-,'']* \d{2,4}\s*(?:–|—|-|to|until)\s*(?:Present|Current|Now|Ongoing|\d{2,4}|[a-z]+\s*\d{2,4})|\d{4}\s*(?:–|—|-|to|until)\s*(?:Present|Current|\d{4}))'
+    date_pattern = r'(?i)\b((?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?|0?[1-9]|1[0-2])[\s/\-,'']*\d{2,4}\s*(?:–|—|-|to|until)\s*(?:Present|Current|Now|Ongoing|\d{2,4}|(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?|0?[1-9]|1[0-2])[\s/\-,'']*\d{2,4})|\b\d{4}\s*(?:–|—|-|to|until)\s*(?:Present|Current|Now|Ongoing|\d{4}))'
 
     raw_lines = exp_text.splitlines()
+    role_words = [
+        "engineer", "developer", "manager", "analyst", "lead", "specialist", "intern", "architect",
+        "consultant", "designer", "administrator", "admin", "officer", "associate", "head", "director",
+        "coordinator", "technician", "programmer", "researcher", "scientist", "trainee"
+    ]
+
     i = 0
     while i < len(raw_lines):
         line = raw_lines[i].strip()
@@ -406,7 +462,7 @@ def _fallback_extract_resume_profile(resume_text: str) -> ResumeProfile:
                 header_line = role_part
             elif i > 0 and raw_lines[i - 1].strip():
                 header_line = raw_lines[i - 1].strip()
-        elif any(rw in line for rw in ["Engineer", "Developer", "Manager", "Analyst", "Lead", "Specialist", "Intern", "Architect", "Consultant", "Designer"]):
+        elif any(rw in line.lower() for rw in role_words):
             header_line = line
             if i + 1 < len(raw_lines):
                 next_m = re.search(date_pattern, raw_lines[i + 1], re.I)
@@ -425,7 +481,9 @@ def _fallback_extract_resume_profile(resume_text: str) -> ResumeProfile:
                     company = parts[1].strip()
                     break
 
-            start_str, end_str, is_curr = parse_date_range(raw_date)
+            start_ym, end_ym, is_curr = parse_date_range(raw_date)
+            start_str = f"{start_ym[0]}-{start_ym[1]:02d}" if start_ym else None
+            end_str = "Present" if is_curr else (f"{end_ym[0]}-{end_ym[1]:02d}" if end_ym else None)
             is_intern = is_internship_role(role, header_line)
 
             desc_lines = []
@@ -435,7 +493,7 @@ def _fallback_extract_resume_profile(resume_text: str) -> ResumeProfile:
                 if not next_l:
                     j += 1
                     continue
-                if re.search(date_pattern, next_l, re.I) or (j < len(raw_lines) - 1 and re.search(date_pattern, raw_lines[j + 1], re.I) and any(rw in next_l for rw in ["Engineer", "Developer", "Manager", "Analyst", "Lead", "Specialist", "Intern", "Architect"])):
+                if re.search(date_pattern, next_l, re.I) or (j < len(raw_lines) - 1 and re.search(date_pattern, raw_lines[j + 1], re.I) and any(rw in next_l.lower() for rw in role_words)):
                     break
                 desc_lines.append(next_l)
                 j += 1
@@ -446,6 +504,8 @@ def _fallback_extract_resume_profile(resume_text: str) -> ResumeProfile:
             exp_entries.append(Experience(
                 company=company,
                 role=role,
+                start_date=start_str,
+                end_date=end_str,
                 raw_date_str=raw_date,
                 is_current=is_curr,
                 is_internship=is_intern,
@@ -458,7 +518,7 @@ def _fallback_extract_resume_profile(resume_text: str) -> ResumeProfile:
         email=email,
         phone=phone,
         skills=found_skills or [],
-        education=[Education(degree=edu_text, field="Computer Science" if "Computer" in edu_text or "Tech" in edu_text else "General", graduation_year=grad_year)],
+        education=edu_entries,
         experience=exp_entries,
         certifications=cert_entries,
     )
