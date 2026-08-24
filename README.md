@@ -1,5 +1,10 @@
 # Smart Resume Screener
 
+[![Live Demo](https://img.shields.io/badge/Live_Demo-Vercel-brightgreen?style=for-the-badge&logo=vercel)](https://smart-resume-screener-psi.vercel.app)
+[![GitHub Repository](https://img.shields.io/badge/GitHub-Repository-blue?style=for-the-badge&logo=github)](https://github.com/abhijeet-rx/smart-resume-screener)
+
+🌐 **Live Application**: [https://smart-resume-screener-psi.vercel.app](https://smart-resume-screener-psi.vercel.app)
+
 **Smart Resume Screener** is an AI-powered, production-grade candidate screening application designed to help recruiters process, evaluate, rank, and analyze candidate resumes against job descriptions at scale.
 
 The application features a hybrid evaluation engine combining **deterministic rule-based parsing** (elapsed calendar month experience calculations, degree hierarchy matching, domain skill overlap) with **generative AI semantic reasoning** (Google Gemini & OpenAI GPT-4o) to deliver fast, highly accurate, and non-biased candidate assessments.
