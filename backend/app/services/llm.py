@@ -126,7 +126,14 @@ async def _call_gemini(system_prompt: str, user_message: str) -> dict:
 
     _ensure_gemini_configured()
 
-    models_to_try = [settings.gemini_model, "gemini-2.0-flash", "gemini-1.5-flash"]
+    models_to_try = [
+        settings.gemini_model,
+        f"models/{settings.gemini_model}" if settings.gemini_model and not settings.gemini_model.startswith("models/") else settings.gemini_model,
+        "models/gemini-2.5-flash",
+        "gemini-2.5-flash",
+        "models/gemini-flash-latest",
+        "gemini-flash-latest",
+    ]
     models_to_try = list(dict.fromkeys([m for m in models_to_try if m]))
 
     last_exc = None
