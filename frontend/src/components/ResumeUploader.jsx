@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { UploadCloud, FileText, X, AlertTriangle, CheckCircle2, Loader2, Sparkles } from 'lucide-react';
+import { UploadCloud, FileText, X, AlertTriangle, CheckCircle2, Loader2, Sparkles, Globe } from 'lucide-react';
 import { api } from '../api';
 
 const MAX_SIZE_BYTES = 10 * 1024 * 1024;
@@ -81,13 +81,19 @@ export default function ResumeUploader({ targetJobId, onScreeningComplete }) {
 
   return (
     <div id="batch-screener-section" className="glass-card rounded-2xl p-6 space-y-4">
-      <div>
-        <h3 className="font-serif text-xl text-white flex items-center gap-2">
-          <UploadCloud className="w-5 h-5 text-[#7b39fc]" /> Batch Resume Screening <em>Hub</em>
-        </h3>
-        <p className="text-xs text-white/50 font-inter mt-1">
-          Upload PDF, DOCX, or TXT candidate resumes to score and rank against your selected job role.
-        </p>
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div>
+          <h3 className="font-serif text-xl text-white flex items-center gap-2">
+            <UploadCloud className="w-5 h-5 text-[#7b39fc]" /> Batch Resume Screening <em>Hub</em>
+          </h3>
+          <p className="text-xs text-white/50 font-inter mt-1">
+            Upload PDF, DOCX, or TXT candidate resumes to score and rank against your selected job role.
+          </p>
+        </div>
+
+        <div className="inline-flex items-center gap-1.5 text-xs text-[#34d399] bg-[#34d399]/10 border border-[#34d399]/25 px-3 py-1.5 rounded-full font-inter font-medium">
+          <Globe className="w-3.5 h-3.5" /> English Resumes Only
+        </div>
       </div>
 
       {/* Drag & Drop Zone */}
@@ -109,7 +115,7 @@ export default function ResumeUploader({ targetJobId, onScreeningComplete }) {
           <UploadCloud className="w-7 h-7" />
         </div>
         <h4 className="font-serif text-lg text-white mb-1">Drop Candidate Resumes <em>Here</em></h4>
-        <p className="text-xs text-white/50 font-inter">or click to browse from your computer (PDF, DOCX, TXT — max 10MB per file)</p>
+        <p className="text-xs text-white/50 font-inter">or click to browse from your computer (English PDF, DOCX, TXT — max 10MB per file)</p>
       </div>
 
       {/* Validation Errors */}

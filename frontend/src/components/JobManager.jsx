@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Briefcase, FileText, Upload, Users, Calendar, Check, Loader2, Sparkles, AlertCircle, Trash2, X } from 'lucide-react';
+import { Plus, Briefcase, FileText, Upload, Users, Calendar, Check, Loader2, Sparkles, AlertCircle, Trash2, X, Globe } from 'lucide-react';
 import { api } from '../api';
 
 export default function JobManager({ selectedJobId, onSelectJob, onJobCreated, refreshTrigger }) {
@@ -376,9 +376,14 @@ export default function JobManager({ selectedJobId, onSelectJob, onJobCreated, r
                 </div>
               ) : (
                 <div className="space-y-2 pt-1">
-                  <label className="text-[11px] font-manrope font-medium text-white/50">
-                    Upload Documents (.pdf, .docx, .txt — multi-select supported)
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-manrope font-medium text-white/70">
+                      Upload Documents (.pdf, .docx, .txt)
+                    </label>
+                    <span className="inline-flex items-center gap-1 text-[10px] text-[#34d399] bg-[#34d399]/10 px-2 py-0.5 rounded-md border border-[#34d399]/20 font-inter">
+                      <Globe className="w-3 h-3" /> English Documents Only
+                    </span>
+                  </div>
                   <input
                     type="file"
                     multiple
@@ -386,6 +391,9 @@ export default function JobManager({ selectedJobId, onSelectJob, onJobCreated, r
                     onChange={(e) => setJdFiles(Array.from(e.target.files || []))}
                     className="w-full px-3 py-2 text-xs font-inter glass-input rounded-lg text-white/90 cursor-pointer"
                   />
+                  <p className="text-[10px] text-white/40 font-inter italic">
+                    ℹ️ Only English language Job Descriptions and resumes are supported for AI requirement extraction and screening.
+                  </p>
 
                   {/* List of selected JD files */}
                   {jdFiles.length > 0 && (
