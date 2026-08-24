@@ -188,7 +188,10 @@ async def extract_resume_profile(resume_text: str) -> ResumeProfile:
     try:
         raw = await _call_llm(system_prompt, user_message)
         logger.debug("LLM resume extraction raw output: %s", raw)
-        return ResumeProfile.model_validate(raw)
+        profile = ResumeProfile.model_validate(raw)
+        from app.services.experience_calculator import compute_resume_experience_metrics
+        compute_resume_experience_metrics(profile.experience)
+        return profile
     except Exception as e:
         logger.warning("LLM resume extraction failed (%s), using rule-based fallback: %s", type(e).__name__, e)
         return _fallback_extract_resume_profile(resume_text)
@@ -325,7 +328,7 @@ def _fallback_extract_job_profile(jd_text: str) -> JobProfile:
 
 def _fallback_extract_resume_profile(resume_text: str) -> ResumeProfile:
     lines = [l.strip() for l in resume_text.splitlines() if l.strip()]
-    name = lines[0].split("—")[0].split("-")[0].strip() if lines else "Candidate"
+    name = lines[0].split("—")[0].split("-")[0].split("|")[0].strip() if lines else "Candidate"
 
     email_match = re.search(r'[\w\.-]+@[\w\.-]+\.\w+', resume_text)
     email = email_match.group(0) if email_match else None
@@ -333,39 +336,131 @@ def _fallback_extract_resume_profile(resume_text: str) -> ResumeProfile:
     phone_match = re.search(r'\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}', resume_text)
     phone = phone_match.group(0) if phone_match else None
 
-    known_skills = ["Python", "FastAPI", "PostgreSQL", "Docker", "AWS", "Redis", "React", "JavaScript", "HTML", "CSS", "SQL", "Git", "WordPress", "Marketing"]
+    known_skills = [
+        "Python", "FastAPI", "PostgreSQL", "Docker", "AWS", "Redis", "React", "TypeScript",
+        "JavaScript", "HTML", "CSS", "SQL", "Git", "WordPress", "Marketing", "Node.js",
+        "Express", "MongoDB", "Tableau", "Power BI", "R", "Kubernetes", "GraphQL", "Linux",
+        "Terraform", "Flask", "Django", "MySQL", "GitHub Actions", "REST APIs", "CI/CD"
+    ]
     found_skills = [s for s in known_skills if re.search(r'\b' + re.escape(s) + r'\b', resume_text, re.I)]
 
     # Parse education
     edu_match = re.search(r"(Bachelor's|Master's|B\.Tech|B\.S|M\.S|B\.A|Diploma|Ph\.D)[^\n]*", resume_text, re.I)
     edu_text = edu_match.group(0).strip() if edu_match else "Bachelor's Degree"
     year_match = re.search(r'\b(20\d{2}|19\d{2})\b', edu_text)
-    grad_year = int(year_match.group(1)) if year_match else 2017
+    grad_year = int(year_match.group(1)) if year_match else None
 
-    # Parse experience entries
+    # Parse certifications
+    cert_entries = []
+    cert_section = False
+    for line in lines:
+        if "certif" in line.lower():
+            cert_section = True
+            continue
+        if cert_section:
+            if any(sec in line.lower() for sec in ["education", "skills", "experience", "projects", "summary"]):
+                cert_section = False
+                continue
+            if line.startswith("-") or line.startswith("*") or "AWS" in line or "Certified" in line:
+                c_name = line.lstrip("-*• ").strip()
+                y_m = re.search(r'\b(20\d{2}|19\d{2})\b', c_name)
+                c_year = int(y_m.group(1)) if y_m else None
+                cert_entries.append(Certification(name=c_name, year=c_year))
+
+    if not cert_entries and "AWS" in resume_text:
+        aws_m = re.search(r'(AWS\s+[A-Za-z\s]+(?:\(\d{4}\))?)', resume_text, re.I)
+        if aws_m:
+            c_name = aws_m.group(1).strip()
+            y_m = re.search(r'\b(20\d{2})\b', c_name)
+            cert_entries.append(Certification(name=c_name, year=int(y_m.group(1)) if y_m else 2022))
+
+    # Parse experience entries line-by-line
+    from app.services.experience_calculator import parse_date_range, is_internship_role, compute_resume_experience_metrics
+
     exp_entries = []
-    blocks = re.split(r'\n{2,}', resume_text)
-    for b in blocks:
-        if any(role_word in b for role_word in ["Engineer", "Developer", "Manager", "Analyst", "Lead", "Specialist", "Intern", "Architect", "Consultant"]):
-            m_match = re.search(r'(\d+)\s*(months?|years?)', b, re.I)
-            m_months = 24
-            if m_match:
-                v = int(m_match.group(1))
-                m_months = v * 12 if "year" in m_match.group(2).lower() else v
-            exp_entries.append(Experience(company="Tech Corp", role="Software Engineer", duration_months=m_months, description=b[:200].strip()))
 
-    if len(exp_entries) < 2:
-        exp_entries = [
-            Experience(company="Tech Corp", role="Senior Engineer", duration_months=36, description="Senior Backend Software Engineer"),
-            Experience(company="Software Inc", role="Software Engineer", duration_months=36, description="Software Engineer"),
-        ]
+    # Split resume into experience section if possible
+    exp_text = resume_text
+    exp_match = re.search(r'(?:EXPERIENCE|WORK HISTORY|EMPLOYMENT HISTORY|PROFESSIONAL EXPERIENCE)(.*?)(?:EDUCATION|SKILLS|CERTIFICATIONS|PROJECTS|\Z)', resume_text, re.DOTALL | re.I)
+    if exp_match:
+        exp_text = exp_match.group(1)
 
-    return ResumeProfile(
+    date_pattern = r'((?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|[0-1]?\d)[a-z]*[\s/\-,'']* \d{2,4}\s*(?:–|—|-|to|until)\s*(?:Present|Current|Now|Ongoing|\d{2,4}|[a-z]+\s*\d{2,4})|\d{4}\s*(?:–|—|-|to|until)\s*(?:Present|Current|\d{4}))'
+
+    raw_lines = exp_text.splitlines()
+    i = 0
+    while i < len(raw_lines):
+        line = raw_lines[i].strip()
+        if not line:
+            i += 1
+            continue
+
+        date_m = re.search(date_pattern, line, re.I)
+        header_line = None
+        raw_date = None
+
+        if date_m:
+            raw_date = date_m.group(1)
+            role_part = line.replace(raw_date, "").strip(" |—–-()")
+            if len(role_part) > 2:
+                header_line = role_part
+            elif i > 0 and raw_lines[i - 1].strip():
+                header_line = raw_lines[i - 1].strip()
+        elif any(rw in line for rw in ["Engineer", "Developer", "Manager", "Analyst", "Lead", "Specialist", "Intern", "Architect", "Consultant", "Designer"]):
+            header_line = line
+            if i + 1 < len(raw_lines):
+                next_m = re.search(date_pattern, raw_lines[i + 1], re.I)
+                if next_m:
+                    raw_date = next_m.group(1)
+                    i += 1
+
+        if header_line:
+            role = header_line
+            company = "Company"
+
+            for delim in ["—", "–", "|", " at ", "@", " - "]:
+                if delim in header_line:
+                    parts = header_line.split(delim, 1)
+                    role = parts[0].strip()
+                    company = parts[1].strip()
+                    break
+
+            start_str, end_str, is_curr = parse_date_range(raw_date)
+            is_intern = is_internship_role(role, header_line)
+
+            desc_lines = []
+            j = i + 1
+            while j < len(raw_lines):
+                next_l = raw_lines[j].strip()
+                if not next_l:
+                    j += 1
+                    continue
+                if re.search(date_pattern, next_l, re.I) or (j < len(raw_lines) - 1 and re.search(date_pattern, raw_lines[j + 1], re.I) and any(rw in next_l for rw in ["Engineer", "Developer", "Manager", "Analyst", "Lead", "Specialist", "Intern", "Architect"])):
+                    break
+                desc_lines.append(next_l)
+                j += 1
+
+            i = j - 1
+            desc_str = "\n".join(desc_lines)
+
+            exp_entries.append(Experience(
+                company=company,
+                role=role,
+                raw_date_str=raw_date,
+                is_current=is_curr,
+                is_internship=is_intern,
+                description=desc_str or header_line
+            ))
+        i += 1
+
+    profile = ResumeProfile(
         name=name or "Candidate",
         email=email,
         phone=phone,
-        skills=found_skills or ["Python"],
+        skills=found_skills or [],
         education=[Education(degree=edu_text, field="Computer Science" if "Computer" in edu_text or "Tech" in edu_text else "General", graduation_year=grad_year)],
         experience=exp_entries,
-        certifications=[Certification(name="AWS Solutions Architect Associate", year=2022)],
+        certifications=cert_entries,
     )
+    compute_resume_experience_metrics(profile.experience)
+    return profile

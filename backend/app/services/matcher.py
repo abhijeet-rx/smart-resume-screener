@@ -244,25 +244,19 @@ def _is_experience_relevant(role: str, desc: str, keywords: set[str]) -> bool:
 
 def match_experience(resume: ResumeProfile, job: JobProfile) -> tuple[float, int, int]:
     """Score RELEVANT experience fit. Returns (score 0-100, relevant_months, total_months)."""
+    from app.services.experience_calculator import compute_resume_experience_metrics
     job_keywords = _extract_job_keywords(job)
-    
-    total_months = 0
-    relevant_months = 0
 
-    for exp in resume.experience:
-        months = exp.duration_months or 0
-        if months > 0:
-            total_months += months
-            if _is_experience_relevant(exp.role, exp.description, job_keywords):
-                relevant_months += months
-
-    # Fallback: if no experience entries matched keyword filtering, use total_months with discount
-    effective_months = relevant_months if relevant_months > 0 else int(total_months * 0.5)
+    metrics = compute_resume_experience_metrics(resume.experience, job_keywords)
+    relevant_months = metrics["relevant_experience_months"]
+    total_months = metrics["total_experience_months"]
 
     required_months = (job.experience_required or 0) * 12
 
     if required_months == 0:
-        return 100.0, effective_months, total_months
+        return 100.0, relevant_months, total_months
+
+    effective_months = relevant_months if relevant_months > 0 else int(total_months * 0.5)
 
     ratio = effective_months / required_months
     if ratio >= 1.2:
@@ -276,7 +270,7 @@ def match_experience(resume: ResumeProfile, job: JobProfile) -> tuple[float, int
     else:
         score = ratio * 80
 
-    return round(min(100.0, score), 1), effective_months, total_months
+    return round(min(100.0, score), 1), relevant_months, total_months
 
 
 # ── Education Degree & Field Matching ─────────────────────

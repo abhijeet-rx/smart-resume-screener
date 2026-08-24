@@ -12,10 +12,11 @@ RULES:
 9. Do NOT compare the resume against any job description.
 10. Do NOT calculate match scores, recommendations, or candidate-job fit.
 
-DURATION CALCULATION:
-- If start and end dates are clearly provided for a role, calculate duration_months as the approximate number of months between them.
-- If the role says "Present" or "Current", calculate duration up to today's date.
-- If dates are ambiguous or missing, set duration_months to null.
+EXPERIENCE DATES & TYPES:
+- Extract `start_date` (e.g. "2022-01", "2022", "Jan 2022") and `end_date` (e.g. "2024-03", "2024", "Present") as stated in the resume.
+- Set `is_current` to true if the role says "Present", "Current", "Ongoing", or "Till Date".
+- Set `is_internship` to true if the role or description indicates an internship, trainee, co-op, or student role.
+- Include `raw_date_str` containing the exact unparsed date string from the text (e.g. "Jan 2022 – Mar 2024").
 
 Return valid JSON matching this exact schema:
 
@@ -36,7 +37,11 @@ Return valid JSON matching this exact schema:
     {
       "company": "string or null",
       "role": "string or null",
-      "duration_months": "integer or null",
+      "start_date": "string or null",
+      "end_date": "string or null",
+      "is_current": false,
+      "is_internship": false,
+      "raw_date_str": "string or null",
       "description": "string or null"
     }
   ],

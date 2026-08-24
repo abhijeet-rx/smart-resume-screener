@@ -20,6 +20,11 @@ class Education(BaseModel):
 class Experience(BaseModel):
     company: Optional[str] = None
     role: Optional[str] = None
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+    is_current: bool = False
+    is_internship: bool = False
+    raw_date_str: Optional[str] = None
     duration_months: Optional[int] = None
     description: Optional[str] = None
 
