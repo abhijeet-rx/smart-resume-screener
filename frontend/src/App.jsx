@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import LandingPage from './components/LandingPage';
 import JobManager from './components/JobManager';
 import ResumeUploader from './components/ResumeUploader';
 import CandidateLeaderboard from './components/CandidateLeaderboard';
@@ -9,8 +8,7 @@ import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/app-sidebar';
 
 function App() {
-  const [showHero, setShowHero] = useState(true);
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState('screener');
   const [selectedJobId, setSelectedJobId] = useState(null);
   const [refreshCandidatesTrigger, setRefreshCandidatesTrigger] = useState(0);
 
@@ -26,11 +24,6 @@ function App() {
       setActiveTab('dashboard');
     }, 600);
   };
-
-  /* ── Hero Landing Page ── */
-  if (showHero) {
-    return <LandingPage onEnterApp={() => setShowHero(false)} />;
-  }
 
   /* ── Dashboard App with Sidebar Layout ── */
   return (
