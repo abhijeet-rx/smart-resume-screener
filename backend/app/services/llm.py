@@ -77,7 +77,7 @@ def _load_reasoning_prompt() -> str:
 _openai_client = None
 _gemini_configured = False
 
-LLM_TIMEOUT_SECONDS = 60
+LLM_TIMEOUT_SECONDS = 15
 
 
 def _get_openai_client():
@@ -126,7 +126,7 @@ async def _call_gemini(system_prompt: str, user_message: str) -> dict:
 
     _ensure_gemini_configured()
 
-    models_to_try = [settings.gemini_model, "gemini-2.0-flash", "gemini-1.5-flash-latest", "gemini-1.5-pro", "gemini-pro"]
+    models_to_try = [settings.gemini_model, "gemini-2.0-flash", "gemini-1.5-flash"]
     models_to_try = list(dict.fromkeys([m for m in models_to_try if m]))
 
     last_exc = None

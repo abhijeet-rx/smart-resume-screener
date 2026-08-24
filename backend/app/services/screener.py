@@ -29,12 +29,14 @@ logger = logging.getLogger(__name__)
 async def screen_candidate(
     resume_text: str,
     jd_text: str,
+    pre_extracted_job_profile: JobProfile | None = None,
 ) -> ScreeningOutput:
     """Run the full screening pipeline for one candidate.
 
     Args:
         resume_text: Raw text extracted from a resume file.
         jd_text: Raw text extracted from a job description file.
+        pre_extracted_job_profile: Optional pre-extracted JobProfile to avoid redundant LLM calls.
 
     Returns:
         ScreeningOutput with extraction, scoring, and reasoning.
@@ -47,12 +49,16 @@ async def screen_candidate(
     if not jd_text or not jd_text.strip():
         raise ValueError("Job description text is empty.")
 
-    # ── Step 1: Structured extraction (parallel — halves LLM latency) ──
-    logger.info("Extracting resume + job profiles in parallel...")
-    resume_profile, job_profile = await asyncio.gather(
-        extract_resume_profile(resume_text),
-        extract_job_profile(jd_text),
-    )
+    # ── Step 1: Structured extraction (reuse pre-extracted job profile if available) ──
+    if pre_extracted_job_profile:
+        job_profile = pre_extracted_job_profile
+        resume_profile = await extract_resume_profile(resume_text)
+    else:
+        logger.info("Extracting resume + job profiles in parallel...")
+        resume_profile, job_profile = await asyncio.gather(
+            extract_resume_profile(resume_text),
+            extract_job_profile(jd_text),
+        )
 
     # ── Step 2: Deterministic scoring (no LLM) ──────────
     logger.info("Computing deterministic match scores...")

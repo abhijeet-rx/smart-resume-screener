@@ -23,6 +23,7 @@ export default function CandidateLeaderboard({ selectedJobId, onSelectJob, refre
   const [inspectCandidateId, setInspectCandidateId] = useState(null);
 
   const dropdownRef = useRef(null);
+  const cacheRef = useRef({});
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -54,8 +55,8 @@ export default function CandidateLeaderboard({ selectedJobId, onSelectJob, refre
     fetchJobs();
   }, [refreshTrigger]);
 
-  // Fetch candidates for current selected job
-  const fetchCandidates = async () => {
+  // Fetch candidates for current selected job with instant cache lookup
+  const fetchCandidates = async (isBackground = false) => {
     if (!selectedJobId) {
       setCandidates([]);
       setTotalCount(0);
@@ -63,16 +64,37 @@ export default function CandidateLeaderboard({ selectedJobId, onSelectJob, refre
       return;
     }
 
-    setLoading(true);
+    if (cacheRef.current[selectedJobId] && !isBackground) {
+      const cached = cacheRef.current[selectedJobId];
+      setCandidates(cached.candidates);
+      setTotalCount(cached.total);
+      setJobTitle(cached.job_title);
+      setLoading(false);
+      // Revalidate in background
+      fetchCandidates(true);
+      return;
+    }
+
+    if (!isBackground) setLoading(true);
     try {
       const data = await api.listCandidates(selectedJobId, 0, 100);
-      setCandidates(data.candidates || []);
-      setTotalCount(data.total || 0);
-      setJobTitle(data.job_title || '');
+      const resCandidates = data.candidates || [];
+      const resTotal = data.total || 0;
+      const resTitle = data.job_title || '';
+
+      cacheRef.current[selectedJobId] = {
+        candidates: resCandidates,
+        total: resTotal,
+        job_title: resTitle,
+      };
+
+      setCandidates(resCandidates);
+      setTotalCount(resTotal);
+      setJobTitle(resTitle);
     } catch (err) {
       console.error('Failed to list candidates:', err);
     } finally {
-      setLoading(false);
+      if (!isBackground) setLoading(false);
     }
   };
 

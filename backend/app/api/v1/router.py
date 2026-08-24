@@ -276,35 +276,65 @@ async def screen_resumes(
     resumes: list[UploadFile] = File(..., description="One or more resume files"),
     db: Session = Depends(get_db),
 ):
-    """Screen one or more resumes against a job. Returns ranked results."""
+    """Screen one or more resumes against a job concurrently. Returns ranked results."""
+    import asyncio
     job = db.query(Job).filter(Job.id == job_id).first()
     if not job:
         raise HTTPException(404, "Job not found.")
 
     jd_text = job.description_text
-    results = []
+    pre_job_profile = None
+    if job.profile_json:
+        try:
+            pre_job_profile = JobProfile.model_validate(job.profile_json)
+        except Exception:
+            pass
+
+    staged_files = []
     errors = []
 
+    # 1. Stage and validate all uploads
     for resume_file in resumes:
         filename = resume_file.filename or "unknown"
         try:
             file_path = await save_validated_upload(resume_file)
+            staged_files.append((filename, file_path))
         except HTTPException as he:
             errors.append({"file": filename, "error": he.detail})
-            continue
         except Exception as e:
             errors.append({"file": filename, "error": str(e)})
+
+    # 2. Concurrently screen resumes (max 5 parallel tasks)
+    semaphore = asyncio.Semaphore(5)
+
+    async def process_single_resume(filename: str, file_path: Path):
+        async with semaphore:
+            try:
+                resume_text = extract_text(file_path)
+                if not resume_text.strip():
+                    return None, {"file": filename, "error": "Could not extract text"}
+
+                output: ScreeningOutput = await screen_candidate(
+                    resume_text, jd_text, pre_extracted_job_profile=pre_job_profile
+                )
+                return (filename, output), None
+            except Exception as e:
+                logger.exception(f"Screening failed for {filename}")
+                return None, {"file": filename, "error": str(e)}
+            finally:
+                file_path.unlink(missing_ok=True)
+
+    tasks = [process_single_resume(fn, fp) for fn, fp in staged_files]
+    screening_results = await asyncio.gather(*tasks)
+
+    # 3. Save results in single DB transaction
+    results = []
+    for res, err in screening_results:
+        if err:
+            errors.append(err)
             continue
-
-        try:
-            resume_text = extract_text(file_path)
-            if not resume_text.strip():
-                errors.append({"file": filename, "error": "Could not extract text"})
-                continue
-
-            output: ScreeningOutput = await screen_candidate(resume_text, jd_text)
-
-            # Persist
+        if res:
+            filename, output = res
             match_db = MatchResultDB(
                 job_id=job_id,
                 candidate_name=output.candidate_name,
@@ -332,12 +362,6 @@ async def screen_resumes(
                 "recommendation": output.reasoning.recommendation,
                 "resume_filename": filename,
             })
-
-        except Exception as e:
-            logger.exception(f"Screening failed for {filename}")
-            errors.append({"file": filename, "error": str(e)})
-        finally:
-            file_path.unlink(missing_ok=True)
 
     # Sort by score descending
     results.sort(key=lambda r: r["final_score"], reverse=True)
