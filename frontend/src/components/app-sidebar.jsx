@@ -46,8 +46,8 @@ export function AppSidebar({ activeTab, setActiveTab }) {
   };
 
   const navItems = [
+    { id: 'jobs', label: 'Target Job Roles', icon: <Briefcase className="w-4 h-4 shrink-0" /> },
     { id: 'dashboard', label: 'Leaderboard', icon: <Layers className="w-4 h-4 shrink-0" /> },
-    { id: 'jobs', label: 'Job Descriptions', icon: <Briefcase className="w-4 h-4 shrink-0" /> },
     { id: 'screener', label: 'Screening Hub', icon: <UploadCloud className="w-4 h-4 shrink-0" /> },
     { id: 'analytics', label: 'Analytics & Insights', icon: <BarChart2 className="w-4 h-4 shrink-0" /> },
   ];

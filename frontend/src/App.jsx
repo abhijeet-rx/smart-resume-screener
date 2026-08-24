@@ -8,7 +8,7 @@ import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/app-sidebar';
 
 function App() {
-  const [activeTab, setActiveTab] = useState('screener');
+  const [activeTab, setActiveTab] = useState('jobs');
   const [selectedJobId, setSelectedJobId] = useState(null);
   const [refreshCandidatesTrigger, setRefreshCandidatesTrigger] = useState(0);
 
@@ -36,8 +36,8 @@ function App() {
           <div className="flex items-center gap-3">
             <SidebarTrigger />
             <h1 className="font-serif text-lg text-white">
-              {activeTab === 'dashboard' && <span>Candidate <em>Leaderboard</em></span>}
               {activeTab === 'jobs' && <span>Target <em>Job Roles</em></span>}
+              {activeTab === 'dashboard' && <span>Candidate <em>Leaderboard</em></span>}
               {activeTab === 'screener' && <span>Batch <em>Screening Hub</em></span>}
               {activeTab === 'analytics' && <span>Screening <em>Analytics & Insights</em></span>}
             </h1>
@@ -49,22 +49,6 @@ function App() {
 
         {/* Main Content Area */}
         <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pb-16">
-          {activeTab === 'dashboard' && (
-            <div className="space-y-6 animate-fade-in">
-              <JobManager
-                selectedJobId={selectedJobId}
-                onSelectJob={setSelectedJobId}
-                onJobCreated={handleJobCreated}
-                refreshTrigger={refreshCandidatesTrigger}
-              />
-
-              <CandidateLeaderboard
-                selectedJobId={selectedJobId}
-                refreshTrigger={refreshCandidatesTrigger}
-              />
-            </div>
-          )}
-
           {activeTab === 'jobs' && (
             <div className="space-y-6 animate-fade-in">
               <JobManager
@@ -76,15 +60,17 @@ function App() {
             </div>
           )}
 
-          {activeTab === 'screener' && (
+          {activeTab === 'dashboard' && (
             <div className="space-y-6 animate-fade-in">
-              <JobManager
+              <CandidateLeaderboard
                 selectedJobId={selectedJobId}
-                onSelectJob={setSelectedJobId}
-                onJobCreated={handleJobCreated}
                 refreshTrigger={refreshCandidatesTrigger}
               />
+            </div>
+          )}
 
+          {activeTab === 'screener' && (
+            <div className="space-y-6 animate-fade-in">
               <ResumeUploader
                 targetJobId={selectedJobId}
                 onScreeningComplete={handleScreeningComplete}
@@ -99,13 +85,6 @@ function App() {
 
           {activeTab === 'analytics' && (
             <div className="space-y-6 animate-fade-in">
-              <JobManager
-                selectedJobId={selectedJobId}
-                onSelectJob={setSelectedJobId}
-                onJobCreated={handleJobCreated}
-                refreshTrigger={refreshCandidatesTrigger}
-              />
-
               <AnalyticsView selectedJobId={selectedJobId} />
             </div>
           )}

@@ -167,8 +167,8 @@ export default function CandidateLeaderboard({ selectedJobId, refreshTrigger }) 
           <span className="text-xs font-inter">Loading candidate rankings...</span>
         </div>
       ) : !selectedJobId ? (
-        <div className="py-12 text-center text-white/50 text-xs font-inter">
-          Select a target job description above to view candidate rankings.
+        <div className="py-12 text-center text-white/50 text-xs font-inter space-y-1">
+          <p>Please select an active role from the <strong className="text-white">Target Job Roles</strong> page to view candidate rankings.</p>
         </div>
       ) : sortedCandidates.length === 0 ? (
         <div className="py-12 text-center text-white/50">
