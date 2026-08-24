@@ -25,6 +25,22 @@ The application features a hybrid evaluation engine combining **deterministic ru
 
 ---
 
+## 🖼️ Application Screenshots
+
+### 1. Active Target Job Roles Dashboard
+![Active Target Job Roles](screenshots/job_roles.png)
+
+### 2. Ranked Candidate Leaderboard & Matches
+![Candidate Leaderboard](screenshots/leaderboard.png)
+
+### 3. Batch Resume Screening Hub
+![Batch Resume Screening Hub](screenshots/screening_hub.png)
+
+### 4. Screening Analytics & Insights
+![Screening Analytics & Insights](screenshots/analytics.png)
+
+---
+
 ## ⚙️ Application Workflow
 
 ```mermaid
