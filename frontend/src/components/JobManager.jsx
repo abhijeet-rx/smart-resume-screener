@@ -253,17 +253,17 @@ export default function JobManager({ selectedJobId, onSelectJob, onJobCreated, r
 
       {/* Post New Job Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-[#0e091b]/80 backdrop-blur-lg flex items-center justify-center z-50 p-4 sm:p-6 overflow-y-auto">
-          <div className="bg-[#1a1333] border border-[rgba(164,132,215,0.3)] border-t-[#7b39fc] rounded-2xl max-w-lg w-full shadow-[0_24px_64px_rgba(0,0,0,0.7)] flex flex-col max-h-[88vh] my-auto overflow-hidden animate-fade-in">
-            {/* Modal Header */}
-            <div className="p-5 border-b border-[rgba(164,132,215,0.15)] flex items-center justify-between gap-3 shrink-0 bg-[#150f2a]">
+        <div className="fixed inset-0 bg-[#0e091b]/85 backdrop-blur-md flex items-center justify-center z-50 p-3 sm:p-5 overflow-y-auto">
+          <div className="bg-[#1a1333] border border-[rgba(164,132,215,0.3)] border-t-[#7b39fc] rounded-2xl max-w-xl w-full p-4 sm:p-5 shadow-[0_24px_64px_rgba(0,0,0,0.8)] space-y-3.5 my-auto max-h-[92vh] overflow-y-auto animate-fade-in">
+            {/* Header */}
+            <div className="flex items-center justify-between gap-3 pb-2 border-b border-[rgba(164,132,215,0.15)]">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-[#7b39fc]/15 text-[#7b39fc] flex items-center justify-center border border-[#7b39fc]/30 shrink-0">
-                  <Sparkles className="w-4 h-4" />
+                <div className="w-7 h-7 rounded-lg bg-[#7b39fc]/15 text-[#7b39fc] flex items-center justify-center border border-[#7b39fc]/30 shrink-0">
+                  <Sparkles className="w-3.5 h-3.5" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-manrope font-bold text-white">Post Job Role & Screening Criteria</h3>
-                  <p className="text-[11px] text-white/50 font-inter">Define target skill sets, experience, and custom requirements to screen candidate resumes.</p>
+                  <h3 className="text-xs font-manrope font-bold text-white">Post Job Role & Screening Criteria</h3>
+                  <p className="text-[10px] text-white/50 font-inter">Define target skills, experience, and custom requirements to screen candidate resumes.</p>
                 </div>
               </div>
               <button
@@ -278,79 +278,47 @@ export default function JobManager({ selectedJobId, onSelectJob, onJobCreated, r
               </button>
             </div>
 
-            {/* Scrollable Form Body */}
-            <form onSubmit={handleCreateJob} className="flex flex-col flex-1 overflow-hidden">
-              <div className="p-5 space-y-4 overflow-y-auto flex-1">
-                {/* Input Mode Selector */}
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setCreateMode('text')}
-                    className={`flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-cabin font-semibold border transition-all cursor-pointer ${
-                      createMode === 'text'
-                        ? 'bg-[#7b39fc] text-white border-[#7b39fc]/30 shadow-[0_4px_14px_rgba(123,57,252,0.3)]'
-                        : 'bg-[#0e091b] text-white/50 border-[rgba(164,132,215,0.2)] hover:text-white hover:bg-white/5'
-                    }`}
-                  >
-                    <FileText className="w-4 h-4" /> Text / Skill Form
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCreateMode('file')}
-                    className={`flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-cabin font-semibold border transition-all cursor-pointer ${
-                      createMode === 'file'
-                        ? 'bg-[#7b39fc] text-white border-[#7b39fc]/30 shadow-[0_4px_14px_rgba(123,57,252,0.3)]'
-                        : 'bg-[#0e091b] text-white/50 border-[rgba(164,132,215,0.2)] hover:text-white hover:bg-white/5'
-                    }`}
-                  >
-                    <Upload className="w-4 h-4" /> Upload Files
-                  </button>
-                </div>
+            {/* Mode Selector */}
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setCreateMode('text')}
+                className={`flex items-center justify-center gap-2 py-1.5 rounded-lg text-xs font-cabin font-semibold border transition-all cursor-pointer ${
+                  createMode === 'text'
+                    ? 'bg-[#7b39fc] text-white border-[#7b39fc]/30 shadow-[0_4px_14px_rgba(123,57,252,0.3)]'
+                    : 'bg-[#0e091b] text-white/50 border-[rgba(164,132,215,0.2)] hover:text-white hover:bg-white/5'
+                }`}
+              >
+                <FileText className="w-3.5 h-3.5" /> Text / Skill Form
+              </button>
+              <button
+                type="button"
+                onClick={() => setCreateMode('file')}
+                className={`flex items-center justify-center gap-2 py-1.5 rounded-lg text-xs font-cabin font-semibold border transition-all cursor-pointer ${
+                  createMode === 'file'
+                    ? 'bg-[#7b39fc] text-white border-[#7b39fc]/30 shadow-[0_4px_14px_rgba(123,57,252,0.3)]'
+                    : 'bg-[#0e091b] text-white/50 border-[rgba(164,132,215,0.2)] hover:text-white hover:bg-white/5'
+                }`}
+              >
+                <Upload className="w-3.5 h-3.5" /> Upload Files
+              </button>
+            </div>
 
-                {/* Job Title */}
-                <div className="space-y-1">
-                  <label className="text-[11px] font-manrope font-medium text-white/70">Job Title / Role Name</label>
+            <form onSubmit={handleCreateJob} className="space-y-3">
+              {/* Row 1: Job Title & Experience */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                <div className="sm:col-span-2 space-y-1">
+                  <label className="text-[10px] font-manrope font-medium text-white/70">Job Title / Role Name</label>
                   <input
                     type="text"
-                    placeholder="e.g. Frontend Developer, Python Engineer, Product Manager"
+                    placeholder="e.g. Frontend Developer, Python Engineer"
                     value={customTitle}
                     onChange={(e) => setCustomTitle(e.target.value)}
-                    className="w-full px-3 py-2 text-xs font-inter glass-input rounded-lg text-white/90 placeholder:text-white/30"
+                    className="w-full px-2.5 py-1.5 text-xs font-inter glass-input rounded-lg text-white/90 placeholder:text-white/30"
                   />
                 </div>
-
-                {/* Target Skill Set */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="text-[11px] font-manrope font-medium text-[#7b39fc]">
-                      Required Skill Set <span className="text-white/40">(comma separated)</span>
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. React, TypeScript, Tailwind, Git"
-                      value={requiredSkills}
-                      onChange={(e) => setRequiredSkills(e.target.value)}
-                      className="w-full px-3 py-2 text-xs font-inter glass-input rounded-lg text-white/90 placeholder:text-white/30 border-[#7b39fc]/30"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[11px] font-manrope font-medium text-white/70">
-                      Preferred / Bonus Skills <span className="text-white/40">(optional)</span>
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Next.js, GraphQL, AWS"
-                      value={preferredSkills}
-                      onChange={(e) => setPreferredSkills(e.target.value)}
-                      className="w-full px-3 py-2 text-xs font-inter glass-input rounded-lg text-white/90 placeholder:text-white/30"
-                    />
-                  </div>
-                </div>
-
-                {/* Experience Years */}
                 <div className="space-y-1">
-                  <label className="text-[11px] font-manrope font-medium text-white/70">Minimum Experience (Years)</label>
+                  <label className="text-[10px] font-manrope font-medium text-white/70">Min Exp (Years)</label>
                   <input
                     type="number"
                     min="0"
@@ -358,104 +326,130 @@ export default function JobManager({ selectedJobId, onSelectJob, onJobCreated, r
                     placeholder="e.g. 2"
                     value={experienceRequired}
                     onChange={(e) => setExperienceRequired(e.target.value)}
-                    className="w-full px-3 py-2 text-xs font-inter glass-input rounded-lg text-white/90 placeholder:text-white/30"
+                    className="w-full px-2.5 py-1.5 text-xs font-inter glass-input rounded-lg text-white/90 placeholder:text-white/30"
                   />
                 </div>
-
-                {/* Custom Screening Criteria / Requirements */}
-                <div className="space-y-1">
-                  <label className="text-[11px] font-manrope font-medium text-white/70">
-                    Custom Requirements & Screening Criteria <span className="text-white/40">(optional)</span>
-                  </label>
-                  <textarea
-                    placeholder="Specify any custom requirements (e.g. Must have experience building scalable APIs, strong problem solving, or specific domain background)..."
-                    rows={3}
-                    value={customRequirements}
-                    onChange={(e) => setCustomRequirements(e.target.value)}
-                    className="w-full px-3 py-2 text-xs font-inter glass-input rounded-lg text-white/90 resize-y placeholder:text-white/30"
-                  />
-                </div>
-
-                {createMode === 'text' ? (
-                  <div className="space-y-1 pt-1">
-                    <label className="text-[11px] font-manrope font-medium text-white/50">
-                      Full Job Description Text <span className="text-white/30">(optional if skills/title entered)</span>
-                    </label>
-                    <textarea
-                      placeholder="Paste full job description details here..."
-                      rows={4}
-                      value={jdText}
-                      onChange={(e) => setJdText(e.target.value)}
-                      className="w-full px-3 py-2 text-xs font-inter glass-input rounded-lg text-white/90 resize-y placeholder:text-white/30"
-                    />
-                  </div>
-                ) : (
-                  <div className="space-y-2 pt-1">
-                    <div className="flex items-center justify-between">
-                      <label className="text-[11px] font-manrope font-medium text-white/70">
-                        Upload Documents (.pdf, .docx, .txt)
-                      </label>
-                      <span className="inline-flex items-center gap-1 text-[10px] text-[#34d399] bg-[#34d399]/10 px-2 py-0.5 rounded-md border border-[#34d399]/20 font-inter">
-                        <Globe className="w-3 h-3" /> English Documents Only
-                      </span>
-                    </div>
-                    <input
-                      type="file"
-                      multiple
-                      accept=".pdf,.docx,.txt"
-                      onChange={(e) => setJdFiles(Array.from(e.target.files || []))}
-                      className="w-full px-3 py-2 text-xs font-inter glass-input rounded-lg text-white/90 cursor-pointer"
-                    />
-                    <p className="text-[10px] text-white/40 font-inter italic">
-                      ℹ️ Only English language Job Descriptions and resumes are supported for AI requirement extraction and screening.
-                    </p>
-
-                    {/* List of selected JD files */}
-                    {jdFiles.length > 0 && (
-                      <div className="space-y-1.5 pt-1">
-                        <div className="text-[11px] text-white/60 font-inter font-semibold">
-                          Selected Files ({jdFiles.length}):
-                        </div>
-                        <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto">
-                          {jdFiles.map((file, idx) => (
-                            <div
-                              key={idx}
-                              className="flex items-center gap-1.5 bg-[#0e091b] border border-[rgba(164,132,215,0.2)] px-2.5 py-1 rounded-md text-[11px] font-inter text-white/80"
-                            >
-                              <FileText className="w-3 h-3 text-[#7b39fc]" />
-                              <span className="max-w-[150px] truncate">{file.name}</span>
-                              <button
-                                type="button"
-                                onClick={() => removeJdFile(idx)}
-                                className="text-white/40 hover:text-white ml-0.5 cursor-pointer"
-                              >
-                                <X className="w-3 h-3" />
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {creationProgress && (
-                  <div className="flex items-center gap-2 p-3 bg-[#7b39fc]/10 border border-[#7b39fc]/30 text-[#7b39fc] rounded-xl text-xs font-inter">
-                    <Loader2 className="w-4 h-4 animate-spin shrink-0" />
-                    <span>{creationProgress}</span>
-                  </div>
-                )}
-
-                {createError && (
-                  <div className="flex items-center gap-2 p-3 bg-[rgba(244,63,94,0.15)] border border-[rgba(244,63,94,0.35)] text-[#f87171] rounded-xl text-xs font-inter">
-                    <AlertCircle className="w-4 h-4 shrink-0" />
-                    <span>{createError}</span>
-                  </div>
-                )}
               </div>
 
-              {/* Fixed Modal Footer */}
-              <div className="p-4 bg-[#140e28] border-t border-[rgba(164,132,215,0.15)] flex justify-end gap-2 shrink-0 rounded-b-2xl">
+              {/* Row 2: Required & Preferred Skills */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-manrope font-medium text-[#7b39fc]">
+                    Required Skills <span className="text-white/40">(comma separated)</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. React, TypeScript, Tailwind, Git"
+                    value={requiredSkills}
+                    onChange={(e) => setRequiredSkills(e.target.value)}
+                    className="w-full px-2.5 py-1.5 text-xs font-inter glass-input rounded-lg text-white/90 placeholder:text-white/30 border-[#7b39fc]/30"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-manrope font-medium text-white/70">
+                    Preferred / Bonus Skills <span className="text-white/40">(optional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Next.js, GraphQL, AWS"
+                    value={preferredSkills}
+                    onChange={(e) => setPreferredSkills(e.target.value)}
+                    className="w-full px-2.5 py-1.5 text-xs font-inter glass-input rounded-lg text-white/90 placeholder:text-white/30"
+                  />
+                </div>
+              </div>
+
+              {/* Row 3: Custom Screening Criteria */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-manrope font-medium text-white/70">
+                  Custom Requirements & Screening Criteria <span className="text-white/40">(optional)</span>
+                </label>
+                <textarea
+                  placeholder="Specify any custom requirements (e.g. Must have experience building scalable APIs)..."
+                  rows={2}
+                  value={customRequirements}
+                  onChange={(e) => setCustomRequirements(e.target.value)}
+                  className="w-full px-2.5 py-1.5 text-xs font-inter glass-input rounded-lg text-white/90 resize-y placeholder:text-white/30"
+                />
+              </div>
+
+              {/* Row 4: JD Text or File upload */}
+              {createMode === 'text' ? (
+                <div className="space-y-1">
+                  <label className="text-[10px] font-manrope font-medium text-white/50">
+                    Full Job Description Text <span className="text-white/30">(optional)</span>
+                  </label>
+                  <textarea
+                    placeholder="Paste full job description details here..."
+                    rows={2}
+                    value={jdText}
+                    onChange={(e) => setJdText(e.target.value)}
+                    className="w-full px-2.5 py-1.5 text-xs font-inter glass-input rounded-lg text-white/90 resize-y placeholder:text-white/30"
+                  />
+                </div>
+              ) : (
+                <div className="space-y-1.5 pt-0.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] font-manrope font-medium text-white/70">
+                      Upload Documents (.pdf, .docx, .txt)
+                    </label>
+                    <span className="inline-flex items-center gap-1 text-[9px] text-[#34d399] bg-[#34d399]/10 px-2 py-0.5 rounded-md border border-[#34d399]/20 font-inter">
+                      <Globe className="w-3 h-3" /> English Documents Only
+                    </span>
+                  </div>
+                  <input
+                    type="file"
+                    multiple
+                    accept=".pdf,.docx,.txt"
+                    onChange={(e) => setJdFiles(Array.from(e.target.files || []))}
+                    className="w-full px-2.5 py-1.5 text-xs font-inter glass-input rounded-lg text-white/90 cursor-pointer"
+                  />
+
+                  {jdFiles.length > 0 && (
+                    <div className="space-y-1 pt-1">
+                      <div className="text-[10px] text-white/60 font-inter font-semibold">
+                        Selected Files ({jdFiles.length}):
+                      </div>
+                      <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
+                        {jdFiles.map((file, idx) => (
+                          <div
+                            key={idx}
+                            className="flex items-center gap-1.5 bg-[#0e091b] border border-[rgba(164,132,215,0.2)] px-2 py-0.5 rounded text-[10px] font-inter text-white/80"
+                          >
+                            <FileText className="w-3 h-3 text-[#7b39fc]" />
+                            <span className="max-w-[140px] truncate">{file.name}</span>
+                            <button
+                              type="button"
+                              onClick={() => removeJdFile(idx)}
+                              className="text-white/40 hover:text-white ml-0.5 cursor-pointer"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {creationProgress && (
+                <div className="flex items-center gap-2 p-2 bg-[#7b39fc]/10 border border-[#7b39fc]/30 text-[#7b39fc] rounded-xl text-xs font-inter">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" />
+                  <span>{creationProgress}</span>
+                </div>
+              )}
+
+              {createError && (
+                <div className="flex items-center gap-2 p-2 bg-[rgba(244,63,94,0.15)] border border-[rgba(244,63,94,0.35)] text-[#f87171] rounded-xl text-xs font-inter">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  <span>{createError}</span>
+                </div>
+              )}
+
+              {/* Footer Action Buttons */}
+              <div className="flex justify-end gap-2 pt-2 border-t border-[rgba(164,132,215,0.15)]">
                 <button
                   type="button"
                   onClick={() => {
@@ -474,7 +468,7 @@ export default function JobManager({ selectedJobId, onSelectJob, onJobCreated, r
                 >
                   {creating ? (
                     <>
-                      <Loader2 className="w-4 h-4 animate-spin" /> Saving Job Criteria...
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" /> Saving...
                     </>
                   ) : (
                     `Save Job Role & Requirements`
