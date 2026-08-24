@@ -253,7 +253,7 @@ export default function JobManager({ selectedJobId, onSelectJob, onJobCreated, r
 
       {/* Post New Job Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-[#0e091b]/85 backdrop-blur-md flex items-center justify-center z-50 pt-10 pb-4 px-3 sm:pt-12 sm:pb-6 sm:px-5">
+        <div className="fixed inset-0 bg-[#0e091b]/85 backdrop-blur-md flex items-center justify-center z-50 p-4 sm:p-6 overflow-y-auto">
           <div className="bg-[#1a1333] border border-[rgba(164,132,215,0.3)] border-t-[#7b39fc] rounded-2xl max-w-xl w-full p-4 sm:p-5 shadow-[0_24px_64px_rgba(0,0,0,0.8)] space-y-3 animate-fade-in">
             {/* Header */}
             <div className="flex items-center justify-between gap-3 pb-2 border-b border-[rgba(164,132,215,0.15)]">
