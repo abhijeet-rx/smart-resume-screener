@@ -20,7 +20,18 @@ from app.schemas.match import MatchResult, MatchReasoning
 
 logger = logging.getLogger(__name__)
 
-_PROMPT_DIR = Path(__file__).resolve().parent.parent.parent.parent / "prompts"
+def _get_prompt_path(filename: str) -> Path:
+    candidates = [
+        Path(__file__).resolve().parent.parent.parent.parent / "prompts" / filename,
+        Path(__file__).resolve().parent.parent.parent / "prompts" / filename,
+        Path.cwd() / "prompts" / filename,
+        Path("/var/task/prompts") / filename,
+    ]
+    for p in candidates:
+        if p.exists():
+            return p
+    return candidates[0]
+
 
 # ── Prompt loaders (cached — read once from disk) ────────
 
@@ -28,7 +39,7 @@ _PROMPT_DIR = Path(__file__).resolve().parent.parent.parent.parent / "prompts"
 @lru_cache(maxsize=1)
 def _load_resume_prompt() -> str:
     """Load the resume-only extraction prompt (no JD comparison)."""
-    prompt_path = _PROMPT_DIR / "resume_extraction.txt"
+    prompt_path = _get_prompt_path("resume_extraction.txt")
     if prompt_path.exists():
         return prompt_path.read_text(encoding="utf-8")
     raise FileNotFoundError(
@@ -40,7 +51,7 @@ def _load_resume_prompt() -> str:
 @lru_cache(maxsize=1)
 def _load_jd_prompt() -> str:
     """Load the JD-only extraction prompt."""
-    prompt_path = _PROMPT_DIR / "jd_extraction.txt"
+    prompt_path = _get_prompt_path("jd_extraction.txt")
     if prompt_path.exists():
         return prompt_path.read_text(encoding="utf-8")
     raise FileNotFoundError(
@@ -52,7 +63,7 @@ def _load_jd_prompt() -> str:
 @lru_cache(maxsize=1)
 def _load_reasoning_prompt() -> str:
     """Load the candidate reasoning / semantic scoring prompt."""
-    prompt_path = _PROMPT_DIR / "candidate_reasoning.txt"
+    prompt_path = _get_prompt_path("candidate_reasoning.txt")
     if prompt_path.exists():
         return prompt_path.read_text(encoding="utf-8")
     raise FileNotFoundError(
