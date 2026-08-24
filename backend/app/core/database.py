@@ -64,10 +64,20 @@ class Base(DeclarativeBase):
     pass
 
 
+_tables_created = False
+
 def get_db():
     """FastAPI dependency that yields a DB session."""
+    global _tables_created
+    if not _tables_created:
+        try:
+            Base.metadata.create_all(bind=engine)
+            _tables_created = True
+        except Exception:
+            pass
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
+
