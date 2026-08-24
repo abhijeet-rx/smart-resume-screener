@@ -261,7 +261,3 @@ VIT-AP University
 GitHub Repository: [Smart Resume Screener](https://github.com/abhijeet-rx/smart-resume-screener)
 
 ---
-
-## License
-
-This project is open-source and available under the [MIT License](LICENSE).
