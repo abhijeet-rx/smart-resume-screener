@@ -104,43 +104,9 @@ export function AppSidebar({ activeTab, setActiveTab }) {
           </SidebarGroup>
         </SidebarContent>
 
-        {/* Footer: Health Status, API Key & Toggle */}
+        {/* Footer: Sidebar Collapse Toggle */}
         <SidebarFooter>
-          {/* Health Status Button */}
-          <button
-            onClick={checkHealthStatus}
-            className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-cabin font-medium border transition-all cursor-pointer ${
-              !open && 'justify-center px-2'
-            } ${
-              health.status === 'online'
-                ? 'bg-[rgba(16,185,129,0.15)] text-[#34d399] border-[rgba(16,185,129,0.35)] hover:bg-[rgba(16,185,129,0.25)]'
-                : health.status === 'checking'
-                ? 'bg-[#2b2344]/50 text-white/50 border-[rgba(164,132,215,0.2)]'
-                : 'bg-[rgba(244,63,94,0.15)] text-[#f87171] border-[rgba(244,63,94,0.35)] hover:bg-[rgba(244,63,94,0.25)]'
-            }`}
-            title={health.message}
-          >
-            {health.status === 'online' ? (
-              <span className="w-2 h-2 rounded-full bg-[#34d399] pulse-dot inline-block shrink-0" />
-            ) : health.status === 'checking' ? (
-              <RefreshCw className="w-3.5 h-3.5 animate-spin text-white/50 shrink-0" />
-            ) : (
-              <span className="w-2 h-2 rounded-full bg-[#f87171] pulse-dot inline-block shrink-0" />
-            )}
-            {open && <span className="truncate">{health.message}</span>}
-          </button>
-
-          {/* API Key Modal Button */}
-          <button
-            onClick={() => setShowKeyModal(true)}
-            className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-cabin font-medium text-white/70 bg-[#2b2344]/50 border border-[rgba(164,132,215,0.2)] hover:border-[rgba(164,132,215,0.4)] hover:bg-[#2b2344]/70 transition-colors cursor-pointer ${
-              !open && 'justify-center px-2'
-            }`}
-            title="Configure API Key"
-          >
-            <Key className="w-3.5 h-3.5 text-white/50 shrink-0" />
-            {open && <span className="truncate">{getApiKey() ? 'API Key Set' : 'Set API Key'}</span>}
-          </button>
+          {/* Toggle Sidebar Collapse Button */}
 
           {/* Toggle Sidebar Collapse Button */}
           <button
