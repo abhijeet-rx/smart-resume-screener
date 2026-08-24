@@ -253,8 +253,8 @@ export default function JobManager({ selectedJobId, onSelectJob, onJobCreated, r
 
       {/* Post New Job Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-[#0e091b]/85 backdrop-blur-md flex items-center justify-center z-50 p-3 sm:p-5 overflow-y-auto">
-          <div className="bg-[#1a1333] border border-[rgba(164,132,215,0.3)] border-t-[#7b39fc] rounded-2xl max-w-xl w-full p-4 sm:p-5 shadow-[0_24px_64px_rgba(0,0,0,0.8)] space-y-3.5 my-auto max-h-[92vh] overflow-y-auto animate-fade-in">
+        <div className="fixed inset-0 bg-[#0e091b]/85 backdrop-blur-md flex items-center justify-center z-50 p-3 sm:p-5">
+          <div className="bg-[#1a1333] border border-[rgba(164,132,215,0.3)] border-t-[#7b39fc] rounded-2xl max-w-xl w-full p-4 sm:p-5 shadow-[0_24px_64px_rgba(0,0,0,0.8)] space-y-3 animate-fade-in">
             {/* Header */}
             <div className="flex items-center justify-between gap-3 pb-2 border-b border-[rgba(164,132,215,0.15)]">
               <div className="flex items-center gap-2.5">
@@ -304,7 +304,7 @@ export default function JobManager({ selectedJobId, onSelectJob, onJobCreated, r
               </button>
             </div>
 
-            <form onSubmit={handleCreateJob} className="space-y-3">
+            <form onSubmit={handleCreateJob} className="space-y-2.5">
               {/* Row 1: Job Title & Experience */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                 <div className="sm:col-span-2 space-y-1">
@@ -366,11 +366,11 @@ export default function JobManager({ selectedJobId, onSelectJob, onJobCreated, r
                   Custom Requirements & Screening Criteria <span className="text-white/40">(optional)</span>
                 </label>
                 <textarea
-                  placeholder="Specify any custom requirements (e.g. Must have experience building scalable APIs)..."
-                  rows={2}
+                  placeholder="e.g. Must have experience building scalable APIs, strong problem solving..."
+                  rows={1}
                   value={customRequirements}
                   onChange={(e) => setCustomRequirements(e.target.value)}
-                  className="w-full px-2.5 py-1.5 text-xs font-inter glass-input rounded-lg text-white/90 resize-y placeholder:text-white/30"
+                  className="w-full px-2.5 py-1.5 text-xs font-inter glass-input rounded-lg text-white/90 resize-none placeholder:text-white/30"
                 />
               </div>
 
@@ -382,10 +382,10 @@ export default function JobManager({ selectedJobId, onSelectJob, onJobCreated, r
                   </label>
                   <textarea
                     placeholder="Paste full job description details here..."
-                    rows={2}
+                    rows={1}
                     value={jdText}
                     onChange={(e) => setJdText(e.target.value)}
-                    className="w-full px-2.5 py-1.5 text-xs font-inter glass-input rounded-lg text-white/90 resize-y placeholder:text-white/30"
+                    className="w-full px-2.5 py-1.5 text-xs font-inter glass-input rounded-lg text-white/90 resize-none placeholder:text-white/30"
                   />
                 </div>
               ) : (
