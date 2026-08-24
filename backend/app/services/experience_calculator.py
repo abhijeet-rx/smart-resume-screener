@@ -1,12 +1,19 @@
 """
 Deterministic Experience Calculator Service.
 
-Provides:
-  - parse_date_point_structured() — parses flexible date strings into structured year/month representations
-  - parse_date_range()             — parses full range strings into structured start/end points
-  - merge_month_intervals()        — merges overlapping (start_month_index, end_month_index) intervals
-  - resolve_experience_dates_and_duration() — computes duration and normalized dates for single entry
-  - compute_resume_experience_metrics()     — computes total, relevant, professional, and internship months
+Convention:
+  Elapsed calendar months calculation:
+      duration_months = (end_year - start_year) * 12 + (end_month - start_month)
+
+  Conservative year-only dates convention:
+      When only a year is provided without a month (e.g. '2022' or '2024'), the system
+      conservatively assumes January (month=1) for both start and end points.
+      Examples:
+        - '2022 - 2024'  -> Jan 2022 to Jan 2024 = 24 months.
+        - '2022 - 2022'  -> Jan 2022 to Jan 2022 = 0 months.
+        - 'June 2022 - 2024' -> June 2022 to Jan 2024 = 19 months.
+        - '2022 - March 2024' -> Jan 2022 to March 2024 = 26 months.
+        - '2023 - Present' -> Jan 2023 to current month.
 """
 
 import re
@@ -49,13 +56,11 @@ def parse_date_point_structured(date_str: Optional[str], is_end: bool = False) -
 
     cleaned = str(date_str).strip().lower()
 
-    # Check for Present / Current / Ongoing
     if any(p in cleaned for p in ["present", "current", "now", "till date", "ongoing"]):
         if is_end or not re.search(r"\b(19[7-9]\d|20[0-4]\d)\b", cleaned):
             now = datetime.now()
             return {"year": now.year, "month": now.month, "has_month": True, "is_present": True}
 
-    # Extract 4-digit years (1970-2049)
     years = re.findall(r"\b(19[7-9]\d|20[0-4]\d)\b", cleaned)
     if not years:
         return None
@@ -102,11 +107,11 @@ def parse_date_point_structured(date_str: Optional[str], is_end: bool = False) -
 
 
 def parse_date_point(date_str: Optional[str], is_end: bool = False) -> Optional[Tuple[int, int]]:
-    """Legacy helper returning (year, month). Month defaults to 1 for start, 12 for end if unparsed."""
+    """Legacy helper returning (year, month). Month defaults to 1 for year-only dates."""
     res = parse_date_point_structured(date_str, is_end=is_end)
     if not res:
         return None
-    m = res["month"] if res["has_month"] and res["month"] else (12 if is_end else 1)
+    m = res["month"] if res["has_month"] and res["month"] else 1
     return (res["year"], m)
 
 
@@ -138,8 +143,11 @@ def resolve_entry_interval(
     is_current: bool = False
 ) -> Tuple[Optional[Tuple[int, int]], int, str, str]:
     """
-    Calculates deterministic month duration and interval bounds:
-    Returns ( (start_month_idx, end_month_idx), duration_months, start_fmt, end_fmt )
+    Calculates elapsed calendar month duration:
+        duration_months = (end_year - start_year) * 12 + (end_month - start_month)
+
+    Year-only convention:
+        Unspecified months default conservatively to January (month=1).
     """
     now = datetime.now()
     if is_current or (end_pt and end_pt.get("is_present")):
@@ -149,70 +157,37 @@ def resolve_entry_interval(
     if not start_pt or not end_pt:
         return None, 0, "", ""
 
-    # Case 1: Both start & end have explicit month
-    if start_pt["has_month"] and end_pt["has_month"]:
-        sy, sm = start_pt["year"], start_pt["month"]
-        ey, em = end_pt["year"], end_pt["month"]
-        s_idx = sy * 12 + sm
-        e_idx = ey * 12 + em
-        if e_idx < s_idx:
-            e_idx = s_idx
-        duration = (e_idx - s_idx) + 1
-        s_fmt = f"{sy}-{sm:02d}"
-        e_fmt = "Present" if is_current else f"{ey}-{em:02d}"
-        return (s_idx, e_idx), duration, s_fmt, e_fmt
+    # Effective start month (defaulting to January if year-only)
+    start_m = start_pt["month"] if start_pt["has_month"] and start_pt["month"] else 1
+    # Effective end month (defaulting to January if year-only)
+    end_m = end_pt["month"] if end_pt["has_month"] and end_pt["month"] else 1
 
-    # Case 2: Both start & end are year-only (e.g. 2022 - 2024 or 2023 - 2023)
-    if not start_pt["has_month"] and not end_pt["has_month"]:
-        sy = start_pt["year"]
-        ey = end_pt["year"]
-        if ey < sy:
-            ey = sy
-        years_diff = ey - sy
-        duration = max(1, years_diff) * 12  # 2022-2024 = 24 months, 2023-2023 = 12 months
-        s_idx = sy * 12 + 1
-        e_idx = s_idx + duration - 1
-        s_fmt = f"{sy}"
-        e_fmt = "Present" if is_current else f"{ey}"
-        return (s_idx, e_idx), duration, s_fmt, e_fmt
+    s_idx = start_pt["year"] * 12 + start_m
+    e_idx = end_pt["year"] * 12 + end_m
 
-    # Case 3: Start has month, End is year-only (e.g. June 2023 - 2024)
-    if start_pt["has_month"] and not end_pt["has_month"]:
-        sy, sm = start_pt["year"], start_pt["month"]
-        ey = end_pt["year"]
-        if ey < sy:
-            ey = sy
-        em = sm if ey > sy else 12
-        s_idx = sy * 12 + sm
-        e_idx = ey * 12 + em
-        if e_idx < s_idx:
-            e_idx = s_idx
-        duration = (e_idx - s_idx) + 1
-        s_fmt = f"{sy}-{sm:02d}"
-        e_fmt = "Present" if is_current else f"{ey}"
-        return (s_idx, e_idx), duration, s_fmt, e_fmt
+    if e_idx < s_idx:
+        e_idx = s_idx
 
-    # Case 4: Start is year-only, End has month (e.g. 2022 - March 2024)
-    if not start_pt["has_month"] and end_pt["has_month"]:
-        sy = start_pt["year"]
-        ey, em = end_pt["year"], end_pt["month"]
-        if ey < sy:
-            sy = ey
-        sm = em if ey > sy else 1
-        s_idx = sy * 12 + sm
-        e_idx = ey * 12 + em
-        if e_idx < s_idx:
-            e_idx = s_idx
-        duration = (e_idx - s_idx) + 1
-        s_fmt = f"{sy}"
-        e_fmt = "Present" if is_current else f"{ey}-{em:02d}"
-        return (s_idx, e_idx), duration, s_fmt, e_fmt
+    duration = e_idx - s_idx
 
-    return None, 0, "", ""
+    # Format normalized dates without fabricating months if unprovided
+    if start_pt["has_month"] and start_pt["month"]:
+        s_fmt = f"{start_pt['year']}-{start_pt['month']:02d}"
+    else:
+        s_fmt = str(start_pt["year"])
+
+    if is_current:
+        e_fmt = "Present"
+    elif end_pt["has_month"] and end_pt["month"]:
+        e_fmt = f"{end_pt['year']}-{end_pt['month']:02d}"
+    else:
+        e_fmt = str(end_pt["year"])
+
+    return (s_idx, e_idx), duration, s_fmt, e_fmt
 
 
 def merge_month_intervals(intervals: list[Tuple[int, int]]) -> int:
-    """Merge overlapping [start_month_index, end_month_index] intervals and return total calendar months."""
+    """Merge overlapping [start_month_index, end_month_index] intervals and return total elapsed calendar months."""
     if not intervals:
         return 0
 
@@ -222,7 +197,7 @@ def merge_month_intervals(intervals: list[Tuple[int, int]]) -> int:
     current_start, current_end = sorted_intervals[0]
 
     for next_start, next_end in sorted_intervals[1:]:
-        if next_start <= current_end + 1:  # Overlapping or contiguous
+        if next_start <= current_end:  # Overlapping or contiguous
             current_end = max(current_end, next_end)
         else:
             merged.append((current_start, current_end))
@@ -230,7 +205,7 @@ def merge_month_intervals(intervals: list[Tuple[int, int]]) -> int:
 
     merged.append((current_start, current_end))
 
-    total_months = sum((end - start + 1) for start, end in merged)
+    total_months = sum((end - start) for start, end in merged)
     return total_months
 
 
@@ -278,14 +253,13 @@ def resolve_experience_dates_and_duration(
 
     if start_pt and end_pt:
         interval, duration, start_fmt, end_fmt = resolve_entry_interval(start_pt, end_pt, is_current=is_curr)
-        if duration > 0:
-            return duration, start_fmt, end_fmt, is_curr, is_intern
+        return max(0, duration), start_fmt, end_fmt, is_curr, is_intern
 
     existing_duration = getattr(exp_entry, "duration_months", None)
     if existing_duration and existing_duration > 0:
         return existing_duration, start_str, end_str, is_curr, is_intern
 
-    return None, start_str, end_str, is_curr, is_intern
+    return 0, start_str, end_str, is_curr, is_intern
 
 
 def compute_resume_experience_metrics(
@@ -309,13 +283,12 @@ def compute_resume_experience_metrics(
         if end_fmt:
             exp.end_date = end_fmt
 
-        # Parse structured points for interval calculation
         start_pt = parse_date_point_structured(exp.start_date, is_end=False)
         end_pt = parse_date_point_structured(exp.end_date, is_end=True)
 
         if start_pt and end_pt:
             interval, entry_dur, _, _ = resolve_entry_interval(start_pt, end_pt, is_current=is_curr)
-            if interval:
+            if interval and entry_dur > 0:
                 total_intervals.append(interval)
 
                 if is_intern:
@@ -366,8 +339,8 @@ def compute_resume_experience_metrics(
         relevant_months = sum_rel if sum_rel > 0 else (sum_total if not job_keywords else 0)
 
     return {
-        "total_experience_months": total_months,
-        "relevant_experience_months": relevant_months,
-        "professional_experience_months": professional_months,
-        "internship_experience_months": internship_months,
+        "total_experience_months": max(0, total_months),
+        "relevant_experience_months": max(0, relevant_months),
+        "professional_experience_months": max(0, professional_months),
+        "internship_experience_months": max(0, internship_months),
     }
