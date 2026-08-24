@@ -4,6 +4,7 @@ Smart Resume Screener — Core configuration.
 Loads settings from environment variables via pydantic-settings.
 """
 
+import os
 from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -13,6 +14,7 @@ class Settings(BaseSettings):
         env_file=".env",
         env_file_encoding="utf-8",
         case_sensitive=False,
+        extra="ignore",
     )
 
     # ── App ──────────────────────────────────────────────
@@ -22,6 +24,16 @@ class Settings(BaseSettings):
 
     # ── Database ─────────────────────────────────────────
     database_url: str = "sqlite:///./smart_resume_screener.db"
+
+    @property
+    def effective_database_url(self) -> str:
+        url = self.database_url
+        if url.startswith("postgres://"):
+            url = url.replace("postgres://", "postgresql://", 1)
+        # On Vercel (read-only filesystem), fallback to /tmp if using default relative sqlite path
+        if (os.getenv("VERCEL") or os.getenv("AWS_LAMBDA_FUNCTION_NAME")) and url == "sqlite:///./smart_resume_screener.db":
+            return "sqlite:////tmp/smart_resume_screener.db"
+        return url
 
     # ── LLM ──────────────────────────────────────────────
     llm_provider: str = "openai"  # "openai" | "gemini"
@@ -43,8 +55,15 @@ class Settings(BaseSettings):
 
     @property
     def upload_path(self) -> Path:
-        p = Path(self.upload_dir)
-        p.mkdir(parents=True, exist_ok=True)
+        target = self.upload_dir
+        if (os.getenv("VERCEL") or os.getenv("AWS_LAMBDA_FUNCTION_NAME")) and target == "./uploads":
+            target = "/tmp/uploads"
+        p = Path(target)
+        try:
+            p.mkdir(parents=True, exist_ok=True)
+        except Exception:
+            p = Path("/tmp/uploads")
+            p.mkdir(parents=True, exist_ok=True)
         return p
 
     # ── Auth ─────────────────────────────────────────────
@@ -56,3 +75,4 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+

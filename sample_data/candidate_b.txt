@@ -1,0 +1,19 @@
+Candidate B — Aman Gupta
+aman.gupta@email.com | (555) 456-7890
+
+SUMMARY
+Backend Developer with 2 years of software engineering experience focusing on Python API development.
+
+EXPERIENCE
+Backend Developer — WebSolutions Ltd (June 2022 – Present)
+- Developed RESTful web APIs using Python and FastAPI
+- Worked with relational databases and SQL queries
+
+Junior Developer — AppCraft (Jan 2022 – May 2022)
+- Maintained web applications and wrote unit tests
+
+EDUCATION
+B.S. Information Technology — State University, 2022
+
+SKILLS
+Python, FastAPI, SQL, REST APIs, Git

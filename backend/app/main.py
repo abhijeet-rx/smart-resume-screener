@@ -28,7 +28,10 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Create tables on startup (dev convenience; use Alembic in prod)."""
-    Base.metadata.create_all(bind=engine)
+    try:
+        Base.metadata.create_all(bind=engine)
+    except Exception as e:
+        logger.warning(f"Database initialization deferred or failed on startup: {e}")
     yield
 
 # ── App ──────────────────────────────────────────────────

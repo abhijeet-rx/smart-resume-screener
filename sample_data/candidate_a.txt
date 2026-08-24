@@ -1,0 +1,21 @@
+Candidate A — Rahul Sharma
+rahul.sharma@email.com | (555) 123-9876 | linkedin.com/in/rahulsharma
+
+SUMMARY
+Senior Backend Developer with 4 years of experience building high-throughput REST APIs and scalable microservices.
+
+EXPERIENCE
+Senior Backend Engineer — TechStart Systems (June 2021 – Present)
+- Designed and built high-performance microservices using Python, FastAPI, and PostgreSQL
+- Deployed applications on AWS (EC2, S3, RDS, Lambda) using Docker containers
+- Optimized database queries reducing API latency by 65%
+
+Software Engineer — CloudData Corp (Jan 2020 – May 2021)
+- Developed ETL data pipelines and REST APIs using Python and PostgreSQL
+
+EDUCATION
+B.Tech Computer Science — National Institute of Technology, 2020
+GPA: 3.8/4.0
+
+SKILLS
+Python, FastAPI, PostgreSQL, Docker, AWS, Redis, REST APIs, Git, Linux

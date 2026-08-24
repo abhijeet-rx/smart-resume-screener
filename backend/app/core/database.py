@@ -49,9 +49,10 @@ class PortableUUID(TypeDecorator):
 
 
 # ── Engine & session ────────────────────────────────────
-connect_args = {"check_same_thread": False} if settings.database_url.startswith("sqlite") else {}
+db_url = settings.effective_database_url
+connect_args = {"check_same_thread": False} if db_url.startswith("sqlite") else {}
 engine = create_engine(
-    settings.database_url,
+    db_url,
     echo=settings.debug,
     connect_args=connect_args,
     pool_pre_ping=True,
