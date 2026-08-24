@@ -9,6 +9,11 @@ export default function JobManager({ selectedJobId, onSelectJob, onJobCreated, r
 
   // Form state
   const [createMode, setCreateMode] = useState('text');
+  const [customTitle, setCustomTitle] = useState('');
+  const [requiredSkills, setRequiredSkills] = useState('');
+  const [preferredSkills, setPreferredSkills] = useState('');
+  const [experienceRequired, setExperienceRequired] = useState('');
+  const [customRequirements, setCustomRequirements] = useState('');
   const [jdText, setJdText] = useState('');
   const [jdFiles, setJdFiles] = useState([]);
   const [creating, setCreating] = useState(false);
@@ -18,6 +23,17 @@ export default function JobManager({ selectedJobId, onSelectJob, onJobCreated, r
   // Delete state
   const [confirmDeleteJobId, setConfirmDeleteJobId] = useState(null);
   const [deletingJobId, setDeletingJobId] = useState(null);
+
+  const resetForm = () => {
+    setCustomTitle('');
+    setRequiredSkills('');
+    setPreferredSkills('');
+    setExperienceRequired('');
+    setCustomRequirements('');
+    setJdText('');
+    setJdFiles([]);
+    setCreateError('');
+  };
 
   const fetchJobs = async () => {
     setLoading(true);
@@ -42,8 +58,8 @@ export default function JobManager({ selectedJobId, onSelectJob, onJobCreated, r
     e.preventDefault();
     setCreateError('');
 
-    if (createMode === 'text' && !jdText.trim()) {
-      setCreateError('Please enter job description text.');
+    if (createMode === 'text' && !jdText.trim() && !requiredSkills.trim() && !customTitle.trim()) {
+      setCreateError('Please enter job description text or specify required skills / title.');
       return;
     }
     if (createMode === 'file' && jdFiles.length === 0) {
@@ -54,28 +70,41 @@ export default function JobManager({ selectedJobId, onSelectJob, onJobCreated, r
     setCreating(true);
     setCreationProgress('');
     try {
-      if (createMode === 'text') {
-        const newJob = await api.createJob({ jdText: jdText.trim() });
-        setJdText('');
-        setShowCreateModal(false);
-        await fetchJobs();
-        onSelectJob(newJob.id);
-        if (onJobCreated) onJobCreated(newJob);
-      } else {
-        // Multi-file batch JD posting
+      if (createMode === 'file') {
         let lastCreatedJob = null;
         for (let i = 0; i < jdFiles.length; i++) {
           setCreationProgress(`Extracting requirements ${i + 1} of ${jdFiles.length}: ${jdFiles[i].name}...`);
-          const newJob = await api.createJob({ jdFile: jdFiles[i] });
+          const newJob = await api.createJob({
+            jdFile: jdFiles[i],
+            customTitle,
+            requiredSkills,
+            preferredSkills,
+            experienceRequired,
+            customRequirements,
+          });
           lastCreatedJob = newJob;
         }
-        setJdFiles([]);
+        resetForm();
         setShowCreateModal(false);
         await fetchJobs();
         if (lastCreatedJob) {
           onSelectJob(lastCreatedJob.id);
           if (onJobCreated) onJobCreated(lastCreatedJob);
         }
+      } else {
+        const newJob = await api.createJob({
+          jdText: jdText.trim(),
+          customTitle,
+          requiredSkills,
+          preferredSkills,
+          experienceRequired,
+          customRequirements,
+        });
+        resetForm();
+        setShowCreateModal(false);
+        await fetchJobs();
+        onSelectJob(newJob.id);
+        if (onJobCreated) onJobCreated(newJob);
       }
     } catch (err) {
       setCreateError(err.message || 'Failed to extract job profile.');
@@ -144,7 +173,7 @@ export default function JobManager({ selectedJobId, onSelectJob, onJobCreated, r
           <Briefcase className="w-10 h-10 text-white/20 mx-auto mb-3" />
           <h3 className="text-sm font-manrope font-semibold text-white mb-1">No Jobs Posted Yet</h3>
           <p className="text-xs text-white/50 font-inter mb-4 max-w-sm mx-auto">
-            Paste a Job Description or upload documents to let our AI engine extract requirements and create target roles.
+            Specify target skill sets, experience requirements, or upload job description files to screen candidate resumes.
           </p>
           <button
             onClick={() => setShowCreateModal(true)}
@@ -225,18 +254,18 @@ export default function JobManager({ selectedJobId, onSelectJob, onJobCreated, r
       {/* Post New Job Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-[#0e091b]/80 backdrop-blur-lg flex items-center justify-center z-50 p-4">
-          <div className="bg-[#1a1333] border border-[rgba(164,132,215,0.3)] border-t-[#7b39fc] rounded-2xl max-w-lg w-full p-6 shadow-[0_16px_48px_rgba(0,0,0,0.5)] space-y-4">
+          <div className="bg-[#1a1333] border border-[rgba(164,132,215,0.3)] border-t-[#7b39fc] rounded-2xl max-w-lg w-full p-6 shadow-[0_16px_48px_rgba(0,0,0,0.5)] space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-[#7b39fc]/15 text-[#7b39fc] flex items-center justify-center border border-[#7b39fc]/30">
+              <div className="w-8 h-8 rounded-lg bg-[#7b39fc]/15 text-[#7b39fc] flex items-center justify-center border border-[#7b39fc]/30 shrink-0">
                 <Sparkles className="w-4 h-4" />
               </div>
               <div>
-                <h3 className="text-sm font-manrope font-bold text-white">Post New Job Description(s)</h3>
-                <p className="text-[11px] text-white/50 font-inter">Extracts skills, experience thresholds, and education requirements automatically.</p>
+                <h3 className="text-sm font-manrope font-bold text-white">Post Job Role & Screening Criteria</h3>
+                <p className="text-[11px] text-white/50 font-inter">Define target skill sets, experience, and custom requirements to screen candidate resumes.</p>
               </div>
             </div>
 
-            {/* Selector — segmented pill */}
+            {/* Input Mode Selector */}
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
@@ -247,7 +276,7 @@ export default function JobManager({ selectedJobId, onSelectJob, onJobCreated, r
                     : 'bg-[#0e091b] text-white/50 border-[rgba(164,132,215,0.2)] hover:text-white hover:bg-white/5'
                 }`}
               >
-                <FileText className="w-4 h-4" /> Paste Text
+                <FileText className="w-4 h-4" /> Text / Skill Form
               </button>
               <button
                 type="button"
@@ -262,20 +291,91 @@ export default function JobManager({ selectedJobId, onSelectJob, onJobCreated, r
               </button>
             </div>
 
-            <form onSubmit={handleCreateJob} className="space-y-4">
+            <form onSubmit={handleCreateJob} className="space-y-3.5">
+              {/* Job Title */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-manrope font-medium text-white/70">Job Title / Role Name</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Frontend Developer, Python Engineer, Product Manager"
+                  value={customTitle}
+                  onChange={(e) => setCustomTitle(e.target.value)}
+                  className="w-full px-3 py-2 text-xs font-inter glass-input rounded-lg text-white/90 placeholder:text-white/30"
+                />
+              </div>
+
+              {/* Target Skill Set */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-manrope font-medium text-[#7b39fc]">
+                    Required Skill Set <span className="text-white/40">(comma separated)</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. React, TypeScript, Tailwind, Git"
+                    value={requiredSkills}
+                    onChange={(e) => setRequiredSkills(e.target.value)}
+                    className="w-full px-3 py-2 text-xs font-inter glass-input rounded-lg text-white/90 placeholder:text-white/30 border-[#7b39fc]/30"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[11px] font-manrope font-medium text-white/70">
+                    Preferred / Bonus Skills <span className="text-white/40">(optional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Next.js, GraphQL, AWS"
+                    value={preferredSkills}
+                    onChange={(e) => setPreferredSkills(e.target.value)}
+                    className="w-full px-3 py-2 text-xs font-inter glass-input rounded-lg text-white/90 placeholder:text-white/30"
+                  />
+                </div>
+              </div>
+
+              {/* Experience Years */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-manrope font-medium text-white/70">Minimum Experience (Years)</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="30"
+                  placeholder="e.g. 2"
+                  value={experienceRequired}
+                  onChange={(e) => setExperienceRequired(e.target.value)}
+                  className="w-full px-3 py-2 text-xs font-inter glass-input rounded-lg text-white/90 placeholder:text-white/30"
+                />
+              </div>
+
+              {/* Custom Screening Criteria / Requirements */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-manrope font-medium text-white/70">
+                  Custom Requirements & Screening Criteria <span className="text-white/40">(optional)</span>
+                </label>
+                <textarea
+                  placeholder="Specify any custom requirements (e.g. Must have experience building scalable APIs, strong problem solving, or specific domain background)..."
+                  rows={3}
+                  value={customRequirements}
+                  onChange={(e) => setCustomRequirements(e.target.value)}
+                  className="w-full px-3 py-2 text-xs font-inter glass-input rounded-lg text-white/90 resize-y placeholder:text-white/30"
+                />
+              </div>
+
               {createMode === 'text' ? (
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-manrope font-medium text-white/50">Job Description Text</label>
+                <div className="space-y-1 pt-1">
+                  <label className="text-[11px] font-manrope font-medium text-white/50">
+                    Full Job Description Text <span className="text-white/30">(optional if skills/title entered)</span>
+                  </label>
                   <textarea
-                    placeholder="Paste the full job description text here..."
-                    rows={7}
+                    placeholder="Paste full job description details here..."
+                    rows={4}
                     value={jdText}
                     onChange={(e) => setJdText(e.target.value)}
                     className="w-full px-3 py-2 text-xs font-inter glass-input rounded-lg text-white/90 resize-y placeholder:text-white/30"
                   />
                 </div>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-2 pt-1">
                   <label className="text-[11px] font-manrope font-medium text-white/50">
                     Upload Documents (.pdf, .docx, .txt — multi-select supported)
                   </label>
@@ -333,7 +433,10 @@ export default function JobManager({ selectedJobId, onSelectJob, onJobCreated, r
               <div className="flex justify-end gap-2 pt-2">
                 <button
                   type="button"
-                  onClick={() => setShowCreateModal(false)}
+                  onClick={() => {
+                    setShowCreateModal(false);
+                    resetForm();
+                  }}
                   disabled={creating}
                   className="px-3.5 py-1.5 rounded-lg text-xs font-cabin font-medium text-white/50 hover:text-white hover:bg-white/5 disabled:opacity-50 cursor-pointer transition-colors"
                 >
@@ -346,10 +449,10 @@ export default function JobManager({ selectedJobId, onSelectJob, onJobCreated, r
                 >
                   {creating ? (
                     <>
-                      <Loader2 className="w-4 h-4 animate-spin" /> Extracting Requirements...
+                      <Loader2 className="w-4 h-4 animate-spin" /> Saving Job Criteria...
                     </>
                   ) : (
-                    `Extract & Save Job${jdFiles.length > 1 ? `s (${jdFiles.length})` : ''}`
+                    `Save Job Role & Requirements`
                   )}
                 </button>
               </div>

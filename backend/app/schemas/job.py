@@ -18,3 +18,5 @@ class JobProfile(BaseModel):
     experience_required: Optional[int] = None  # years
     education_required: Optional[str] = None
     responsibilities: list[str] = Field(default_factory=list)
+    custom_requirements: Optional[str] = None
+

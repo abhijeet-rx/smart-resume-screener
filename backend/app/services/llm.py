@@ -245,6 +245,7 @@ async def generate_match_reasoning(
         f"Preferred Skills: {', '.join(job.preferred_skills)}\n"
         f"Experience Required: {job.experience_required or 'Not specified'} years\n"
         f"Education Required: {job.education_required or 'Not specified'}\n"
+        f"Custom Requirements: {job.custom_requirements or 'None'}\n"
         f"Responsibilities: {'; '.join(job.responsibilities[:5])}\n"
         f"\n=== CANDIDATE ===\n"
         f"Name: {resume.name}\n"

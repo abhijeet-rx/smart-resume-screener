@@ -79,13 +79,28 @@ export const api = {
 
   deleteJob: (jobId) => request(`/jobs/${jobId}`, { method: 'DELETE' }),
 
-  createJob: async ({ jdText, jdFile }) => {
+  createJob: async ({ jdText, jdFile, customTitle, requiredSkills, preferredSkills, experienceRequired, customRequirements }) => {
     const formData = new FormData();
     if (jdText?.trim()) {
       formData.append('jd_text', jdText.trim());
     }
     if (jdFile) {
       formData.append('jd_file', jdFile);
+    }
+    if (customTitle?.trim()) {
+      formData.append('custom_title', customTitle.trim());
+    }
+    if (requiredSkills?.trim()) {
+      formData.append('custom_required_skills', requiredSkills.trim());
+    }
+    if (preferredSkills?.trim()) {
+      formData.append('custom_preferred_skills', preferredSkills.trim());
+    }
+    if (experienceRequired !== undefined && experienceRequired !== null && experienceRequired !== '') {
+      formData.append('custom_experience_years', String(experienceRequired));
+    }
+    if (customRequirements?.trim()) {
+      formData.append('custom_requirements', customRequirements.trim());
     }
     return request('/jobs', {
       method: 'POST',

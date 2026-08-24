@@ -95,9 +95,14 @@ async def create_job(
     request: Request,
     jd_text: str = Form(None, description="Paste job description text"),
     jd_file: UploadFile = File(None, description="Or upload a JD file (PDF/DOCX/TXT)"),
+    custom_title: str = Form(None, description="Optional custom job title"),
+    custom_required_skills: str = Form(None, description="Comma-separated required skills"),
+    custom_preferred_skills: str = Form(None, description="Comma-separated preferred skills"),
+    custom_experience_years: int = Form(None, description="Minimum experience years required"),
+    custom_requirements: str = Form(None, description="Custom requirements or screening criteria"),
     db: Session = Depends(get_db),
 ):
-    """Create a job from JD text or file. Extracts structured JobProfile via LLM."""
+    """Create a job from JD text, file, or custom skills/requirements."""
     from app.services.llm import extract_job_profile
 
     # Get JD text from form or file
@@ -111,8 +116,24 @@ async def create_job(
         finally:
             file_path.unlink(missing_ok=True)
 
+    # If no document or paste text was given, construct text from custom fields
     if not text.strip():
-        raise HTTPException(400, "Please provide job description text or upload a file.")
+        parts = []
+        if custom_title and custom_title.strip():
+            parts.append(f"Job Title: {custom_title.strip()}")
+        if custom_required_skills and custom_required_skills.strip():
+            parts.append(f"Required Skills: {custom_required_skills.strip()}")
+        if custom_preferred_skills and custom_preferred_skills.strip():
+            parts.append(f"Preferred Skills: {custom_preferred_skills.strip()}")
+        if custom_experience_years is not None:
+            parts.append(f"Minimum Experience: {custom_experience_years} years")
+        if custom_requirements and custom_requirements.strip():
+            parts.append(f"Special Requirements: {custom_requirements.strip()}")
+
+        text = "\n".join(parts).strip()
+
+    if not text.strip():
+        raise HTTPException(400, "Please provide job text, a JD file, or explicit skill/requirement parameters.")
 
     if len(text) > MAX_JD_TEXT_LENGTH:
         raise HTTPException(
@@ -127,8 +148,37 @@ async def create_job(
         logger.exception("JD extraction failed")
         raise HTTPException(500, f"Failed to extract job profile: {str(e)}")
 
+    # Apply user custom overrides if explicitly provided
+    if custom_title and custom_title.strip():
+        profile.job_title = custom_title.strip()
+
+    if custom_required_skills and custom_required_skills.strip():
+        req_list = [s.strip() for s in custom_required_skills.split(",") if s.strip()]
+        if req_list:
+            # Put user-specified required skills at the front
+            existing_lower = {s.lower() for s in req_list}
+            for s in profile.required_skills:
+                if s.lower() not in existing_lower:
+                    req_list.append(s)
+            profile.required_skills = req_list
+
+    if custom_preferred_skills and custom_preferred_skills.strip():
+        pref_list = [s.strip() for s in custom_preferred_skills.split(",") if s.strip()]
+        if pref_list:
+            existing_lower = {s.lower() for s in pref_list}
+            for s in profile.preferred_skills:
+                if s.lower() not in existing_lower:
+                    pref_list.append(s)
+            profile.preferred_skills = pref_list
+
+    if custom_experience_years is not None and custom_experience_years >= 0:
+        profile.experience_required = custom_experience_years
+
+    if custom_requirements and custom_requirements.strip():
+        profile.custom_requirements = custom_requirements.strip()
+
     job = Job(
-        title=profile.job_title,
+        title=profile.job_title or "Target Job Role",
         description_text=text,
         profile_json=profile.model_dump(),
     )
