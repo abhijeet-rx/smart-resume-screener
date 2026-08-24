@@ -481,9 +481,21 @@ def _fallback_extract_resume_profile(resume_text: str) -> ResumeProfile:
                     company = parts[1].strip()
                     break
 
-            start_ym, end_ym, is_curr = parse_date_range(raw_date)
-            start_str = f"{start_ym[0]}-{start_ym[1]:02d}" if start_ym else None
-            end_str = "Present" if is_curr else (f"{end_ym[0]}-{end_ym[1]:02d}" if end_ym else None)
+            start_pt, end_pt, is_curr = parse_date_range(raw_date)
+            start_str = (
+                f"{start_pt['year']}-{start_pt['month']:02d}"
+                if start_pt and start_pt.get("has_month") and start_pt.get("month")
+                else (str(start_pt["year"]) if start_pt else None)
+            )
+            end_str = (
+                "Present"
+                if is_curr
+                else (
+                    f"{end_pt['year']}-{end_pt['month']:02d}"
+                    if end_pt and end_pt.get("has_month") and end_pt.get("month")
+                    else (str(end_pt["year"]) if end_pt else None)
+                )
+            )
             is_intern = is_internship_role(role, header_line)
 
             desc_lines = []

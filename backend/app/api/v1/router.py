@@ -335,6 +335,7 @@ async def screen_resumes(
             continue
         if res:
             filename, output = res
+            profile_dump = output.resume_profile.model_dump() if output.resume_profile else output.model_dump()
             match_db = MatchResultDB(
                 job_id=job_id,
                 candidate_name=output.candidate_name,
@@ -347,7 +348,7 @@ async def screen_resumes(
                 education_score=output.match.education_score,
                 final_score=output.match.final_score,
                 recommendation=output.reasoning.recommendation,
-                resume_profile_json=output.model_dump(),
+                resume_profile_json=profile_dump,
                 reasoning_json=output.reasoning.model_dump(),
                 match_details_json=output.match.model_dump(),
             )
@@ -435,6 +436,21 @@ async def get_candidate(candidate_id: UUID, db: Session = Depends(get_db)):
     if not row:
         raise HTTPException(404, "Candidate screening not found.")
 
+    prof = row.resume_profile_json or {}
+    if "resume_profile" in prof and isinstance(prof["resume_profile"], dict):
+        prof = prof["resume_profile"]
+    elif "experience" not in prof:
+        prof = {
+            "name": row.candidate_name,
+            "email": row.candidate_email,
+            "phone": row.candidate_phone,
+            "skills": prof.get("match", {}).get("skill_details", {}).get("matched_required", []),
+            "education": [],
+            "experience": [],
+            "projects": [],
+            "certifications": [],
+        }
+
     return {
         "id": str(row.id),
         "job_id": str(row.job_id),
@@ -452,6 +468,6 @@ async def get_candidate(candidate_id: UUID, db: Session = Depends(get_db)):
         "recommendation": row.recommendation,
         "match_details": row.match_details_json,
         "reasoning": row.reasoning_json,
-        "full_profile": row.resume_profile_json,
+        "full_profile": prof,
         "created_at": row.created_at.isoformat(),
     }

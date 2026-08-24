@@ -87,4 +87,5 @@ async def screen_candidate(
         job_title=job_profile.job_title,
         match=final_match,
         reasoning=reasoning,
+        resume_profile=resume_profile,
     )

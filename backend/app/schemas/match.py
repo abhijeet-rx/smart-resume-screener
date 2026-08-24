@@ -48,6 +48,8 @@ class MatchReasoning(BaseModel):
     gaps: list[str] = Field(default_factory=list)
 
 
+from app.schemas.resume import ResumeProfile
+
 # ── Combined output ─────────────────────────────────────
 
 class ScreeningOutput(BaseModel):
@@ -58,3 +60,4 @@ class ScreeningOutput(BaseModel):
     job_title: Optional[str] = None
     match: MatchResult = Field(default_factory=MatchResult)
     reasoning: MatchReasoning = Field(default_factory=MatchReasoning)
+    resume_profile: Optional[ResumeProfile] = None
