@@ -5,7 +5,7 @@ SQLAlchemy model for screening match results.
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import Column, String, Float, Text, DateTime, JSON, ForeignKey
+from sqlalchemy import Column, String, Float, Text, DateTime, JSON, ForeignKey, Index
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base, PortableUUID
@@ -13,6 +13,9 @@ from app.core.database import Base, PortableUUID
 
 class MatchResultDB(Base):
     __tablename__ = "match_results"
+    __table_args__ = (
+        Index("ix_match_results_job_score", "job_id", "final_score"),
+    )
 
     id = Column(PortableUUID(), primary_key=True, default=uuid.uuid4)
     job_id = Column(PortableUUID(), ForeignKey("jobs.id"), nullable=False, index=True)

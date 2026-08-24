@@ -227,7 +227,66 @@ async def extract_job_profile(jd_text: str) -> JobProfile:
         return JobProfile.model_validate(raw)
     except Exception as e:
         logger.warning("LLM JD extraction failed (%s), using rule-based fallback: %s", type(e).__name__, e)
-        return _fallback_extract_job_profile(jd_text)
+def extract_job_profile_fast(
+    jd_text: str,
+    custom_title: str | None = None,
+    custom_required_skills: str | None = None,
+    custom_preferred_skills: str | None = None,
+    custom_experience_years: int | None = None,
+    custom_requirements: str | None = None,
+) -> JobProfile:
+    """Instantly build or extract JobProfile using rule-based deterministic parsing,
+    avoiding blocking LLM API calls during job creation."""
+    lines = [l.strip() for l in jd_text.splitlines() if l.strip()]
+
+    title = None
+    if custom_title and custom_title.strip():
+        title = custom_title.strip()
+    else:
+        for line in lines[:5]:
+            clean_title = re.sub(r'^(?:Job\s*Title|Position|Role|Title)\s*[:|-]\s*', '', line, flags=re.I).strip()
+            if any(rw in clean_title.lower() for rw in ["engineer", "developer", "manager", "analyst", "lead", "specialist", "architect", "consultant", "designer", "admin", "scientist"]):
+                title = clean_title
+                break
+        if not title and lines:
+            title = lines[0]
+        if not title:
+            title = "Untitled Screening"
+
+    known_skills = [
+        "Python", "FastAPI", "PostgreSQL", "Docker", "AWS", "Redis", "React", "TypeScript",
+        "JavaScript", "HTML", "CSS", "SQL", "Git", "Node.js", "Express", "MongoDB", "Tableau",
+        "Power BI", "Kubernetes", "GraphQL", "Linux", "Terraform", "Flask", "Django", "MySQL",
+        "GitHub Actions", "REST APIs", "CI/CD"
+    ]
+    found_skills = [s for s in known_skills if re.search(r'\b' + re.escape(s) + r'\b', jd_text, re.I)]
+
+    exp_years = custom_experience_years
+    if exp_years is None:
+        exp_m = re.search(r'(\d+)\+?\s*years?', jd_text, re.I)
+        exp_years = int(exp_m.group(1)) if exp_m else 0
+
+    profile = JobProfile(
+        job_title=title,
+        required_skills=found_skills or ["Software Development"],
+        preferred_skills=[],
+        experience_required=exp_years,
+        education_required="Bachelor's Degree",
+        responsibilities=lines[1:5] if len(lines) > 1 else [],
+        custom_requirements=custom_requirements or "",
+    )
+
+    if custom_required_skills and custom_required_skills.strip():
+        req_list = [s.strip() for s in custom_required_skills.split(",") if s.strip()]
+        if req_list:
+            profile.required_skills = req_list
+
+    if custom_preferred_skills and custom_preferred_skills.strip():
+        pref_list = [s.strip() for s in custom_preferred_skills.split(",") if s.strip()]
+        if pref_list:
+            profile.preferred_skills = pref_list
+
+    return profile
 
 
 # ── Task 5: Semantic scoring + LLM reasoning ─────────────

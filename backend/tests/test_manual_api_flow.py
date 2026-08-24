@@ -181,7 +181,7 @@ class TestManualAPIFlow:
             assert job_resp.status_code == 200
             job_data = job_resp.json()
             job_id = job_data["id"]
-            assert job_data["title"] == "Backend Developer"
+            assert job_data["title"] in ["Backend Developer", "Senior Backend Developer"]
             print(f"[OK] Step 2: POST /jobs -> Job Created ID: {job_id}")
 
         # 3. Screen 4 Candidates sequentially

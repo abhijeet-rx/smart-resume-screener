@@ -12,7 +12,9 @@ Endpoints:
   GET    /health                  Health check
 """
 
+import asyncio
 import logging
+import time
 from pathlib import Path
 from uuid import UUID, uuid4
 
@@ -30,12 +32,14 @@ from app.schemas.job import JobProfile
 from app.schemas.match import ScreeningOutput
 from app.services.parser import extract_text
 from app.services.screener import screen_candidate
+from app.services.llm import extract_job_profile, extract_job_profile_fast
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1", tags=["screening"])
 
 ALLOWED_EXTENSIONS = {".pdf", ".docx", ".txt"}
 MAX_JD_TEXT_LENGTH = 50_000  # characters
+MAX_BATCH_RESUMES = 10
 
 
 async def save_validated_upload(file: UploadFile) -> Path:
@@ -142,40 +146,15 @@ async def create_job(
             f"({len(text):,} chars received).",
         )
 
-    try:
-        profile = await extract_job_profile(text)
-    except Exception as e:
-        logger.exception("JD extraction failed")
-        raise HTTPException(500, f"Failed to extract job profile: {str(e)}")
-
-    # Apply user custom overrides if explicitly provided
-    if custom_title and custom_title.strip():
-        profile.job_title = custom_title.strip()
-
-    if custom_required_skills and custom_required_skills.strip():
-        req_list = [s.strip() for s in custom_required_skills.split(",") if s.strip()]
-        if req_list:
-            # Put user-specified required skills at the front
-            existing_lower = {s.lower() for s in req_list}
-            for s in profile.required_skills:
-                if s.lower() not in existing_lower:
-                    req_list.append(s)
-            profile.required_skills = req_list
-
-    if custom_preferred_skills and custom_preferred_skills.strip():
-        pref_list = [s.strip() for s in custom_preferred_skills.split(",") if s.strip()]
-        if pref_list:
-            existing_lower = {s.lower() for s in pref_list}
-            for s in profile.preferred_skills:
-                if s.lower() not in existing_lower:
-                    pref_list.append(s)
-            profile.preferred_skills = pref_list
-
-    if custom_experience_years is not None and custom_experience_years >= 0:
-        profile.experience_required = custom_experience_years
-
-    if custom_requirements and custom_requirements.strip():
-        profile.custom_requirements = custom_requirements.strip()
+    # Instantly build/extract JobProfile without blocking on LLM call
+    profile = extract_job_profile_fast(
+        text,
+        custom_title=custom_title,
+        custom_required_skills=custom_required_skills,
+        custom_preferred_skills=custom_preferred_skills,
+        custom_experience_years=custom_experience_years,
+        custom_requirements=custom_requirements,
+    )
 
     job = Job(
         title=profile.job_title or "Target Job Role",
@@ -240,14 +219,15 @@ async def list_jobs(
 
 @router.get("/jobs/{job_id}")
 async def get_job(job_id: UUID, db: Session = Depends(get_db)):
-    """Get job details with profile."""
+    """Get a single job by ID."""
     job = db.query(Job).filter(Job.id == job_id).first()
     if not job:
         raise HTTPException(404, "Job not found.")
+
     return {
         "id": str(job.id),
         "title": job.title,
-        "description_text": job.description_text[:2000] if job.description_text else "",
+        "description_text": job.description_text,
         "profile": job.profile_json,
         "created_at": job.created_at.isoformat(),
     }
@@ -266,21 +246,36 @@ async def delete_job(job_id: UUID, db: Session = Depends(get_db)):
     return {"deleted": True, "id": str(job_id)}
 
 
-# ── Screening ───────────────────────────────────────────
+# ── Batch Screening ──────────────────────────────────────
 
 @router.post("/jobs/{job_id}/screen", dependencies=[Depends(verify_api_key)])
 @limiter.limit(settings.rate_limit_screen)
 async def screen_resumes(
     request: Request,
     job_id: UUID,
-    resumes: list[UploadFile] = File(..., description="One or more resume files"),
+    resumes: list[UploadFile] = File(..., description="Resume files (PDF/DOCX/TXT) — max 10"),
     db: Session = Depends(get_db),
 ):
-    """Screen one or more resumes against a job concurrently. Returns ranked results."""
-    import asyncio
+    """Upload and screen multiple resumes against a target job.
+
+    Optimized batch pipeline:
+      1. Non-blocking thread-pool text extraction
+      2. Controlled parallel LLM screening (asyncio.Semaphore)
+      3. Single bulk DB insert transaction
+      4. Detailed timing stats for auditing
+    """
+    t_start = time.perf_counter()
+
     job = db.query(Job).filter(Job.id == job_id).first()
     if not job:
         raise HTTPException(404, "Job not found.")
+
+    if len(resumes) > MAX_BATCH_RESUMES:
+        raise HTTPException(
+            400,
+            f"Batch size limit exceeded. Maximum {MAX_BATCH_RESUMES} resumes per request "
+            f"({len(resumes)} received).",
+        )
 
     jd_text = job.description_text
     pre_job_profile = None
@@ -293,7 +288,7 @@ async def screen_resumes(
     staged_files = []
     errors = []
 
-    # 1. Stage and validate all uploads
+    # 1. Stage upload files
     for resume_file in resumes:
         filename = resume_file.filename or "unknown"
         try:
@@ -304,13 +299,23 @@ async def screen_resumes(
         except Exception as e:
             errors.append({"file": filename, "error": str(e)})
 
-    # 2. Concurrently screen resumes (max 5 parallel tasks)
+    # Extract text concurrently without blocking asyncio loop
+    pdf_start = time.perf_counter()
+    async def extract_single_file(fn: str, fp: Path):
+        txt = await asyncio.to_thread(extract_text, fp)
+        return fn, fp, txt
+
+    text_tasks = [extract_single_file(fn, fp) for fn, fp in staged_files]
+    parsed_files = await asyncio.gather(*text_tasks)
+    pdf_dur_ms = (time.perf_counter() - pdf_start) * 1000
+
+    # 2. Concurrently screen candidate resumes with bounded semaphore
+    screen_start = time.perf_counter()
     semaphore = asyncio.Semaphore(5)
 
-    async def process_single_resume(filename: str, file_path: Path):
+    async def process_single_candidate(filename: str, file_path: Path, resume_text: str):
         async with semaphore:
             try:
-                resume_text = extract_text(file_path)
                 if not resume_text.strip():
                     return None, {"file": filename, "error": "Could not extract text"}
 
@@ -324,11 +329,13 @@ async def screen_resumes(
             finally:
                 file_path.unlink(missing_ok=True)
 
-    tasks = [process_single_resume(fn, fp) for fn, fp in staged_files]
-    screening_results = await asyncio.gather(*tasks)
+    screen_tasks = [process_single_candidate(fn, fp, txt) for fn, fp, txt in parsed_files]
+    screening_results = await asyncio.gather(*screen_tasks)
+    screen_dur_ms = (time.perf_counter() - screen_start) * 1000
 
-    # 3. Save results in single DB transaction
-    results = []
+    # 3. Save all results in a single bulk DB transaction
+    db_start = time.perf_counter()
+    match_dbs = []
     for res, err in screening_results:
         if err:
             errors.append(err)
@@ -352,19 +359,29 @@ async def screen_resumes(
                 reasoning_json=output.reasoning.model_dump(),
                 match_details_json=output.match.model_dump(),
             )
-            db.add(match_db)
-            db.commit()
-            db.refresh(match_db)
+            match_dbs.append((match_db, output, filename))
 
+    results = []
+    if match_dbs:
+        db.add_all([m for m, _, _ in match_dbs])
+        db.commit()
+        for m, output, filename in match_dbs:
             results.append({
-                "id": str(match_db.id),
+                "id": str(m.id),
                 "candidate_name": output.candidate_name,
                 "final_score": output.match.final_score,
                 "recommendation": output.reasoning.recommendation,
                 "resume_filename": filename,
             })
 
-    # Sort by score descending
+    db_dur_ms = (time.perf_counter() - db_start) * 1000
+    total_dur_ms = (time.perf_counter() - t_start) * 1000
+
+    logger.info(
+        "Batch screening timing: Total=%.1fms (PDF Parsing=%.1fms, Screening=%.1fms, DB Bulk Insert=%.1fms)",
+        total_dur_ms, pdf_dur_ms, screen_dur_ms, db_dur_ms
+    )
+
     results.sort(key=lambda r: r["final_score"], reverse=True)
 
     return {
