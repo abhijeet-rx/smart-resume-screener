@@ -1,18 +1,3 @@
-"""
-Deterministic matching engine (Task 4).
-
-Computes evidence-based scores by comparing a ResumeProfile against a JobProfile:
-  - Semantic Skill Matching (exact, alias, and technology domain relationships)
-  - Relevant Experience Scoring (calculates software/domain relevant experience vs total experience)
-  - Education Level & Field Relevance (evaluates degree level AND degree field relevance)
-
-Scoring weights:
-  Skill Match       40%
-  Semantic Match    30%  (assessed via LLM semantic reasoning)
-  Experience        20%
-  Education         10%
-"""
-
 import logging
 import re
 
@@ -22,9 +7,8 @@ from app.schemas.match import SkillMatchResult, MatchResult
 
 logger = logging.getLogger(__name__)
 
-# ── Skill alias normalization ────────────────────────────
-
 _SKILL_ALIASES: dict[str, str] = {
+
     "js": "javascript",
     "javascript": "javascript",
     "typescript": "typescript",
@@ -119,8 +103,8 @@ _SKILL_ALIASES: dict[str, str] = {
     "natural language processing": "nlp",
 }
 
-# ── Semantic Skill Relationships ────────────────────────
-# Parent required skill -> set of child/related frameworks & libraries that imply expertise.
+
+
 
 _SKILL_RELATIONSHIPS: dict[str, set[str]] = {
     "machine learning": {
@@ -157,9 +141,8 @@ def _normalize_skill_set(skills: list[str]) -> dict[str, str]:
     return result
 
 
-# ── Skill matching with Semantic Relationships ──────────
-
 def match_skills(resume: ResumeProfile, job: JobProfile) -> SkillMatchResult:
+
     """Compare candidate skills against required/preferred job skills,
     including semantic relationships (e.g. PyTorch -> Machine Learning)."""
     candidate = _normalize_skill_set(resume.skills)
@@ -218,9 +201,8 @@ def match_skills(resume: ResumeProfile, job: JobProfile) -> SkillMatchResult:
     )
 
 
-# ── Relevant Experience Matching ─────────────────────────
-
 def _extract_job_keywords(job: JobProfile) -> set[str]:
+
     """Extract relevant domain & technical keywords from job profile."""
     keywords = set()
     for s in job.required_skills + job.preferred_skills:
@@ -273,9 +255,8 @@ def match_experience(resume: ResumeProfile, job: JobProfile) -> tuple[float, int
     return round(min(100.0, score), 1), relevant_months, total_months
 
 
-# ── Education Degree & Field Matching ─────────────────────
-
 _DEGREE_LEVELS: dict[str, int] = {
+
     "phd": 4, "ph.d": 4, "doctorate": 4, "doctoral": 4,
     "master": 3, "masters": 3, "master's": 3, "m.s.": 3, "m.sc": 3,
     "msc": 3, "m.tech": 3, "mtech": 3, "m.e.": 3, "mba": 3, "m.a.": 3,
@@ -369,9 +350,8 @@ def match_education(resume: ResumeProfile, job: JobProfile) -> tuple[float, bool
     return base_score, field_relevant
 
 
-# ── Strengths & Gaps ─────────────────────────────────────
-
 def _build_strengths_gaps(
+
     skill_result: SkillMatchResult,
     exp_score: float,
     edu_score: float,
@@ -422,9 +402,8 @@ def _build_strengths_gaps(
     return strengths, gaps
 
 
-# ── Main entry point ─────────────────────────────────────
-
 WEIGHTS = {
+
     "skill": 0.40,
     "semantic": 0.30,
     "experience": 0.20,

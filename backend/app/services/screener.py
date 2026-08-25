@@ -1,15 +1,3 @@
-"""
-Screening orchestrator — ties the full pipeline together.
-
-Pipeline:
-  1. Parse files → raw text
-  2. Extract ResumeProfile + JobProfile (LLM, parallel)
-  3. Compute deterministic match scores
-  4. Generate LLM reasoning + semantic score
-  5. Recompute final score with semantic score
-  6. Return ScreeningOutput
-"""
-
 import asyncio
 import logging
 
@@ -31,25 +19,11 @@ async def screen_candidate(
     jd_text: str,
     pre_extracted_job_profile: JobProfile | None = None,
 ) -> ScreeningOutput:
-    """Run the full screening pipeline for one candidate.
-
-    Args:
-        resume_text: Raw text extracted from a resume file.
-        jd_text: Raw text extracted from a job description file.
-        pre_extracted_job_profile: Optional pre-extracted JobProfile to avoid redundant LLM calls.
-
-    Returns:
-        ScreeningOutput with extraction, scoring, and reasoning.
-
-    Raises:
-        ValueError: If either text is empty.
-    """
     if not resume_text or not resume_text.strip():
         raise ValueError("Resume text is empty.")
     if not jd_text or not jd_text.strip():
         raise ValueError("Job description text is empty.")
 
-    # ── Step 1: Structured extraction (reuse pre-extracted job profile if available) ──
     if pre_extracted_job_profile:
         job_profile = pre_extracted_job_profile
         resume_profile = await extract_resume_profile(resume_text)
@@ -60,17 +34,14 @@ async def screen_candidate(
             extract_job_profile(jd_text),
         )
 
-    # ── Step 2: Deterministic scoring (no LLM) ──────────
     logger.info("Computing deterministic match scores...")
     preliminary_match = compute_match(resume_profile, job_profile, semantic_score=0)
 
-    # ── Step 3: LLM reasoning + semantic score ──────────
     logger.info("Generating LLM reasoning and semantic score...")
     reasoning, semantic_score = await generate_match_reasoning(
         resume_profile, job_profile, preliminary_match,
     )
 
-    # ── Step 4: Recompute with semantic score ────────────
     final_match = compute_match(resume_profile, job_profile, semantic_score=semantic_score)
 
     logger.info(
@@ -89,3 +60,4 @@ async def screen_candidate(
         reasoning=reasoning,
         resume_profile=resume_profile,
     )
+

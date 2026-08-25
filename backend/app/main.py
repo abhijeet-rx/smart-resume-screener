@@ -1,7 +1,3 @@
-"""
-Smart Resume Screener — FastAPI application entry point.
-"""
-
 import logging
 
 from contextlib import asynccontextmanager
@@ -16,7 +12,6 @@ from app.core.database import engine, Base
 from app.core.limiter import limiter
 from app.api.v1.router import router as v1_router
 
-# ── Logging ──────────────────────────────────────────────
 logging.basicConfig(
     level=logging.DEBUG if settings.debug else logging.INFO,
     format="%(asctime)s │ %(levelname)-8s │ %(name)s │ %(message)s",
@@ -24,17 +19,14 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-# ── Lifespan ─────────────────────────────────────────────
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Create tables on startup (dev convenience; use Alembic in prod)."""
     try:
         Base.metadata.create_all(bind=engine)
     except Exception as e:
         logger.warning(f"Database initialization deferred or failed on startup: {e}")
     yield
 
-# ── App ──────────────────────────────────────────────────
 app = FastAPI(
     title=settings.app_name,
     version="0.2.0",
@@ -44,11 +36,9 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# ── Rate Limiting ────────────────────────────────────────
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# ── CORS ─────────────────────────────────────────────────
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origin_list,
@@ -57,7 +47,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ── Routes ───────────────────────────────────────────────
 app.include_router(v1_router)
 
 
@@ -68,4 +57,5 @@ async def root():
         "version": "0.2.0",
         "docs": "/docs",
     }
+
 

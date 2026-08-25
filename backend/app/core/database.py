@@ -1,10 +1,3 @@
-"""
-SQLAlchemy engine, session factory, and portable UUID type.
-
-The PortableUUID type stores UUIDs as CHAR(32) on SQLite and uses
-the native UUID type on PostgreSQL, so the project works on both.
-"""
-
 import uuid as _uuid
 
 from sqlalchemy import create_engine, String, TypeDecorator
@@ -14,14 +7,7 @@ from sqlalchemy.orm import sessionmaker, DeclarativeBase
 from app.core.config import settings
 
 
-# ── Portable UUID type ──────────────────────────────────
 class PortableUUID(TypeDecorator):
-    """Platform-agnostic UUID column.
-
-    Uses PostgreSQL's native ``UUID`` when available, otherwise stores
-    as ``CHAR(32)`` (hex, no dashes) for SQLite and other backends.
-    """
-
     impl = String(32)
     cache_ok = True
 
@@ -35,7 +21,6 @@ class PortableUUID(TypeDecorator):
             return value
         if dialect.name == "postgresql":
             return value if isinstance(value, _uuid.UUID) else _uuid.UUID(str(value))
-        # SQLite / others: store as 32-char hex string
         if isinstance(value, _uuid.UUID):
             return value.hex
         return _uuid.UUID(str(value)).hex
@@ -48,7 +33,6 @@ class PortableUUID(TypeDecorator):
         return _uuid.UUID(str(value))
 
 
-# ── Engine & session ────────────────────────────────────
 db_url = settings.effective_database_url
 connect_args = {"check_same_thread": False} if db_url.startswith("sqlite") else {}
 engine = create_engine(
@@ -67,7 +51,6 @@ class Base(DeclarativeBase):
 _tables_created = False
 
 def get_db():
-    """FastAPI dependency that yields a DB session."""
     global _tables_created
     if not _tables_created:
         try:
@@ -80,4 +63,5 @@ def get_db():
         yield db
     finally:
         db.close()
+
 

@@ -1,17 +1,3 @@
-"""
-API v1 router — /api/v1/*
-
-Endpoints:
-  POST   /jobs                    Create a job from JD text
-  GET    /jobs                    List all jobs (paginated)
-  GET    /jobs/{id}               Get job details
-  DELETE /jobs/{id}               Delete a job and its candidates
-  POST   /jobs/{id}/screen        Upload resume(s) and screen against a job
-  GET    /jobs/{id}/candidates    Ranked candidate list for a job (paginated)
-  GET    /candidates/{id}         Full candidate screening detail
-  GET    /health                  Health check
-"""
-
 import asyncio
 import logging
 import time
@@ -21,6 +7,7 @@ from uuid import UUID, uuid4
 from fastapi import APIRouter, UploadFile, File, Form, Query, Depends, HTTPException, Request
 from sqlalchemy import func
 from sqlalchemy.orm import Session
+
 
 from app.core.config import settings
 from app.core.database import get_db
@@ -84,16 +71,14 @@ async def save_validated_upload(file: UploadFile) -> Path:
     return saved_path
 
 
-# ── Health ───────────────────────────────────────────────
-
 @router.get("/health")
+
 async def health_check():
     return {"status": "ok", "version": "0.2.0"}
 
 
-# ── Jobs ─────────────────────────────────────────────────
-
 @router.post("/jobs", dependencies=[Depends(verify_api_key)])
+
 @limiter.limit(settings.rate_limit_jobs)
 async def create_job(
     request: Request,
@@ -246,9 +231,8 @@ async def delete_job(job_id: UUID, db: Session = Depends(get_db)):
     return {"deleted": True, "id": str(job_id)}
 
 
-# ── Batch Screening ──────────────────────────────────────
-
 @router.post("/jobs/{job_id}/screen", dependencies=[Depends(verify_api_key)])
+
 @limiter.limit(settings.rate_limit_screen)
 async def screen_resumes(
     request: Request,
@@ -393,9 +377,8 @@ async def screen_resumes(
     }
 
 
-# ── Candidates ──────────────────────────────────────────
-
 @router.get("/jobs/{job_id}/candidates")
+
 async def list_candidates(
     job_id: UUID,
     skip: int = Query(0, ge=0, description="Number of records to skip"),

@@ -1,12 +1,3 @@
-"""
-LLM service — structured extraction and reasoning via LLM.
-
-Provides:
-  - extract_resume_profile()   — resume text → ResumeProfile
-  - extract_job_profile()      — JD text → JobProfile
-  - generate_match_reasoning() — deterministic evidence → semantic score + explanation
-"""
-
 import json
 import logging
 import re
@@ -19,6 +10,7 @@ from app.schemas.job import JobProfile
 from app.schemas.match import MatchResult, MatchReasoning
 
 logger = logging.getLogger(__name__)
+
 
 def _get_prompt_path(filename: str) -> Path:
     candidates = [
@@ -33,12 +25,8 @@ def _get_prompt_path(filename: str) -> Path:
     return candidates[0]
 
 
-# ── Prompt loaders (cached — read once from disk) ────────
-
-
 @lru_cache(maxsize=1)
 def _load_resume_prompt() -> str:
-    """Load the resume-only extraction prompt (no JD comparison)."""
     prompt_path = _get_prompt_path("resume_extraction.txt")
     if prompt_path.exists():
         return prompt_path.read_text(encoding="utf-8")
@@ -50,7 +38,6 @@ def _load_resume_prompt() -> str:
 
 @lru_cache(maxsize=1)
 def _load_jd_prompt() -> str:
-    """Load the JD-only extraction prompt."""
     prompt_path = _get_prompt_path("jd_extraction.txt")
     if prompt_path.exists():
         return prompt_path.read_text(encoding="utf-8")
@@ -62,7 +49,6 @@ def _load_jd_prompt() -> str:
 
 @lru_cache(maxsize=1)
 def _load_reasoning_prompt() -> str:
-    """Load the candidate reasoning / semantic scoring prompt."""
     prompt_path = _get_prompt_path("candidate_reasoning.txt")
     if prompt_path.exists():
         return prompt_path.read_text(encoding="utf-8")
@@ -72,16 +58,14 @@ def _load_reasoning_prompt() -> str:
     )
 
 
-# ── Singleton LLM clients ──────────────────────────────
-
 _openai_client = None
+_groq_client = None
 _gemini_configured = False
 
 LLM_TIMEOUT_SECONDS = 15
 
 
 def _get_openai_client():
-    """Return a reusable AsyncOpenAI client (created once per process)."""
     global _openai_client
     if _openai_client is None:
         from openai import AsyncOpenAI
@@ -93,17 +77,28 @@ def _get_openai_client():
     return _openai_client
 
 
+
+def _get_groq_client():
+    global _groq_client
+    if _groq_client is None:
+        from openai import AsyncOpenAI
+
+        api_key = settings.groq_api_key or settings.openai_api_key
+        _groq_client = AsyncOpenAI(
+            api_key=api_key,
+            base_url="https://api.groq.com/openai/v1",
+            timeout=LLM_TIMEOUT_SECONDS,
+        )
+    return _groq_client
+
+
 def _ensure_gemini_configured():
-    """Configure the Gemini SDK once per process."""
     global _gemini_configured
     if not _gemini_configured:
         import google.generativeai as genai
 
         genai.configure(api_key=settings.gemini_api_key)
         _gemini_configured = True
-
-
-# ── LLM API callers ─────────────────────────────────────
 
 
 async def _call_openai(system_prompt: str, user_message: str) -> dict:
@@ -119,6 +114,45 @@ async def _call_openai(system_prompt: str, user_message: str) -> dict:
     )
     content = response.choices[0].message.content
     return json.loads(content)
+
+
+async def _call_groq(system_prompt: str, user_message: str) -> dict:
+    client = _get_groq_client()
+    models_to_try = [
+        settings.groq_model,
+        "openai/gpt-oss-120b",
+        "openai/gpt-oss-20b",
+        "groq/compound",
+        "groq/compound-mini",
+        "qwen/qwen3.6-27b",
+        "allam-2-7b",
+    ]
+    models_to_try = list(dict.fromkeys([m for m in models_to_try if m]))
+
+    last_exc = None
+    for model_name in models_to_try:
+        try:
+            response = await client.chat.completions.create(
+                model=model_name,
+                response_format={"type": "json_object"},
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_message},
+                ],
+                temperature=0.2,
+            )
+            content = response.choices[0].message.content
+            return json.loads(content)
+        except Exception as e:
+            last_exc = e
+            err_msg = str(e).lower()
+            if any(k in err_msg for k in ["404", "not found", "model_not_found", "decommissioned", "not supported", "does not exist"]):
+                logger.warning(f"Groq model '{model_name}' unavailable ({e}), trying fallback...")
+                continue
+            raise e
+
+    if last_exc:
+        raise last_exc
 
 
 async def _call_gemini(system_prompt: str, user_message: str) -> dict:
@@ -164,18 +198,19 @@ async def _call_gemini(system_prompt: str, user_message: str) -> dict:
 
 
 async def _call_llm(system_prompt: str, user_message: str) -> dict:
-    """Route to the configured LLM provider."""
-    if settings.llm_provider == "openai":
+    provider = settings.llm_provider.lower()
+    if provider == "openai":
         return await _call_openai(system_prompt, user_message)
-    elif settings.llm_provider == "gemini":
+    elif provider == "gemini":
         return await _call_gemini(system_prompt, user_message)
+    elif provider == "groq":
+        return await _call_groq(system_prompt, user_message)
     else:
         raise ValueError(f"Unknown LLM provider: {settings.llm_provider}")
 
 
-# ── Task 2: Standalone resume extraction ─────────────────
-
 async def extract_resume_profile(resume_text: str) -> ResumeProfile:
+
     """Extract structured data from resume text using the configured LLM.
 
     This function does NOT receive a job description — it performs

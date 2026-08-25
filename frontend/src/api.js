@@ -1,7 +1,3 @@
-/**
- * Smart Resume Screener — API Client Layer
- */
-
 const getApiBaseUrl = () => {
   const envUrl = import.meta.env.VITE_API_URL;
   if (envUrl) {
@@ -38,7 +34,6 @@ async function request(endpoint, options = {}) {
     headers['X-API-Key'] = currentApiKey;
   }
 
-  // Don't set Content-Type if sending FormData (browser sets boundary automatically)
   if (!(options.body instanceof FormData) && !headers['Content-Type']) {
     headers['Content-Type'] = 'application/json';
   }
@@ -60,7 +55,6 @@ async function request(endpoint, options = {}) {
         }
       }
     } catch {
-      // Ignore JSON parse error on non-JSON response
     }
     throw new Error(errorMessage);
   }
@@ -69,10 +63,8 @@ async function request(endpoint, options = {}) {
 }
 
 export const api = {
-  // Health
   checkHealth: () => request('/health'),
 
-  // Jobs
   listJobs: (skip = 0, limit = 20) => request(`/jobs?skip=${skip}&limit=${limit}`),
   
   getJob: (jobId) => request(`/jobs/${jobId}`),
@@ -108,7 +100,6 @@ export const api = {
     });
   },
 
-  // Screening
   screenResumes: async (jobId, resumeFiles) => {
     const formData = new FormData();
     for (const file of resumeFiles) {
@@ -120,9 +111,9 @@ export const api = {
     });
   },
 
-  // Candidates
   listCandidates: (jobId, skip = 0, limit = 50) => 
     request(`/jobs/${jobId}/candidates?skip=${skip}&limit=${limit}`),
 
   getCandidateDetail: (candidateId) => request(`/candidates/${candidateId}`),
 };
+

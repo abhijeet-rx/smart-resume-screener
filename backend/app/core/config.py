@@ -1,9 +1,3 @@
-"""
-Smart Resume Screener — Core configuration.
-
-Loads settings from environment variables via pydantic-settings.
-"""
-
 import os
 from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -17,12 +11,10 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    # ── App ──────────────────────────────────────────────
     app_name: str = "Smart Resume Screener"
     app_env: str = "development"
     debug: bool = True
 
-    # ── Database ─────────────────────────────────────────
     database_url: str = "sqlite:///./smart_resume_screener.db"
 
     @property
@@ -30,26 +22,24 @@ class Settings(BaseSettings):
         url = self.database_url
         if url.startswith("postgres://"):
             url = url.replace("postgres://", "postgresql://", 1)
-        # On Vercel (read-only filesystem), fallback to /tmp if using default relative sqlite path
         if (os.getenv("VERCEL") or os.getenv("AWS_LAMBDA_FUNCTION_NAME")) and url == "sqlite:///./smart_resume_screener.db":
             return "sqlite:////tmp/smart_resume_screener.db"
         return url
 
-    # ── LLM ──────────────────────────────────────────────
-    llm_provider: str = "openai"  # "openai" | "gemini"
+    llm_provider: str = "openai"
     openai_api_key: str = ""
     gemini_api_key: str = ""
+    groq_api_key: str = ""
     openai_model: str = "gpt-4o"
     gemini_model: str = "gemini-1.5-flash"
+    groq_model: str = "openai/gpt-oss-120b"
 
-    # ── CORS ─────────────────────────────────────────────
     cors_origins: str = "http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173,http://127.0.0.1:3000,*"
 
     @property
     def cors_origin_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",")]
 
-    # ── Upload ───────────────────────────────────────────
     max_upload_size_mb: int = 10
     upload_dir: str = "./uploads"
 
@@ -66,13 +56,12 @@ class Settings(BaseSettings):
             p.mkdir(parents=True, exist_ok=True)
         return p
 
-    # ── Auth ─────────────────────────────────────────────
-    api_key: str = ""  # When empty, auth is disabled (dev mode)
+    api_key: str = ""
 
-    # ── Rate Limiting ────────────────────────────────────
     rate_limit_screen: str = "10/minute"
     rate_limit_jobs: str = "20/minute"
 
 
 settings = Settings()
+
 
